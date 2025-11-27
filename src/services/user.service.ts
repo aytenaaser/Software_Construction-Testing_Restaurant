@@ -1,7 +1,7 @@
 // src/modules/users/users.service.ts
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {Injectable, NotFoundException, ConflictException, BadRequestException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import {Model, Types} from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import {User, UserDocument, UserRole} from "../models/user.schema";
 
@@ -11,6 +11,10 @@ export class UsersService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
     ) {}
 
+
+    private normalizeEmail(email: string) {
+        return email.trim().toLowerCase();
+    }
     // Imperative style - step by step
     async create(createUserDto: any): Promise<User> {
         // Check if user already exists
@@ -32,6 +36,34 @@ export class UsersService {
         });
 
         return user.save();
+    }
+
+
+    async updateUserInternal(userId: string, updateData: Partial<UserDocument>): Promise<UserDocument> {
+        if (!userId || !Types.ObjectId.isValid(userId)) {
+            throw new BadRequestException('Invalid user ID');
+        }
+        if (updateData.email) {
+            updateData.email = this.normalizeEmail(updateData.email);
+        }
+
+        const updatedUser = await this.userModel.findByIdAndUpdate(
+            userId,
+            {$set: updateData},
+            {new: true, runValidators: true}
+        ).exec();
+
+        if (!updatedUser) {
+            throw new NotFoundException('User not found');
+        }
+        return updatedUser;
+    }
+
+
+
+
+    async findByEmailWithHash(email: string): Promise<UserDocument | null> {
+        return this.userModel.findOne({email: this.normalizeEmail(email)}).select('+password').exec();
     }
 
     // Declarative style - using array methods

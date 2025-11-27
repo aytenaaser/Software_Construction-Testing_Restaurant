@@ -27,7 +27,23 @@ export class User {
   @Prop()
   phone: string;
 
-  // Use Types.ObjectId instead of MongooseSchema.Types.ObjectId
+    @Prop({default: false})
+    isEmailVerified?: boolean;
+
+    @Prop({type: String, default: null})
+    otpCode?: string | null;
+
+    @Prop({type: Date, default: null})
+    otpExpiresAt?: Date | null;
+
+    @Prop({type: String, default: null})
+    passwordResetOtpCode?: string | null;
+
+    @Prop({type: Date, default: null})
+    passwordResetOtpExpiresAt?: Date | null;
+
+
+    // Use Types.ObjectId instead of MongooseSchema.Types.ObjectId
   @Prop([{ type: Types.ObjectId, ref: 'Reservation' }])
   reservationIds: Types.ObjectId[];
 
