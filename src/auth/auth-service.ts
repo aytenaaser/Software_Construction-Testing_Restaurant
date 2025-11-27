@@ -45,7 +45,7 @@ export class AuthService {
 
 
     async register(dto: CreateUserDto) {
-        const existing = await this.userService.findByEmail(dto.email);
+        const existing = await this.userService.findByEmailOptional(dto.email);
 
         if (existing) throw new UnauthorizedException('Email already in use');
 

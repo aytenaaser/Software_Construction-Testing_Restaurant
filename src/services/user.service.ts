@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import {Model, Types} from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import {User, UserDocument, UserRole} from "../models/user.schema";
+import {CreateUserDto} from "../dto/user-dto";
 
 @Injectable()
 export class UsersService {
@@ -16,7 +17,7 @@ export class UsersService {
         return email.trim().toLowerCase();
     }
     // Imperative style - step by step
-    async create(createUserDto: any): Promise<User> {
+    async create(createUserDto: CreateUserDto): Promise<User> {
         // Check if user already exists
         const existingUser = await this.userModel.findOne({
             email: createUserDto.email
@@ -90,6 +91,10 @@ export class UsersService {
         }
 
         return user;
+    }
+
+    async findByEmailOptional(email: string): Promise<User | null> {
+        return this.userModel.findOne({ email: this.normalizeEmail(email) }).select('-password').lean().exec();
     }
 
     async update(id: string, updateUserDto: any): Promise<User> {

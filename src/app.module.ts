@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {AuthModule} from "./auth/auth-module";
 import {UsersModule} from "./modules/user-module";
+import {ReservationModule} from "./modules/reservation-module";
 
 
 
@@ -17,8 +18,9 @@ import {UsersModule} from "./modules/user-module";
             }),
             inject: [ConfigService],
         }),
-AuthModule,
+        AuthModule,
         UsersModule,
+        ReservationModule,
 
     ],
 

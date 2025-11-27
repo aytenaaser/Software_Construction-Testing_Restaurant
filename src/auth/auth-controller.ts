@@ -37,8 +37,9 @@ export class AuthController {
     async register(@Body() dto: CreateUserDto) {
         try {
             return await this.auth.register(dto);
-        } catch (e) {
-            throw new InternalServerErrorException('Something went wrong during registration.');
+        } catch (e: any) {
+            console.error('Registration error:', e?.message ?? String(e), e?.stack);
+            throw e;
         }
     }
 
