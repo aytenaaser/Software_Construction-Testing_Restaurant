@@ -15,6 +15,28 @@ import {CreateUserDto} from "../dto/user-dto";
 import {UsersService} from "../services/user.service";
 
 
+/**
+ * Authentication Service
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Only handles authentication and authorization logic
+ * - Open/Closed: Can be extended with new auth strategies without modifying existing code
+ * - Liskov Substitution: Uses service interfaces and abstractions
+ * - Interface Segregation: Depends on focused services (UsersService, JwtService, MailService)
+ * - Dependency Inversion: Depends on service abstractions, not concrete implementations
+ *
+ * Programming Paradigms:
+ * - Imperative: Step-by-step auth operations (register, login, logout)
+ * - Declarative: Pure transformation functions (toSafeUser), Promise chains
+ *
+ * Security Features:
+ * - Password hashing with bcrypt
+ * - JWT token management
+ * - Token blacklisting for logout
+ * - Email verification with OTP
+ * - Password reset with OTP
+ */
+
 type SafeUser = {
     _id: string;
     email: string;
@@ -32,6 +54,10 @@ export class AuthService {
         private readonly mail: MailService,
     ) {}
 
+    /**
+     * DECLARATIVE HELPER: Transform user document to safe user object
+     * Pure function with no side effects
+     */
     private toSafeUser(doc: any): SafeUser {
         const obj = typeof doc.toObject === 'function' ? doc.toObject() : doc;
         return {
@@ -44,6 +70,10 @@ export class AuthService {
     }
 
 
+    /**
+     * IMPERATIVE STYLE: Register new user
+     * Step-by-step user creation with OTP generation and email sending
+     */
     async register(dto: CreateUserDto) {
         const existing = await this.userService.findByEmailOptional(dto.email);
 
@@ -76,6 +106,10 @@ export class AuthService {
         };
     }
 
+    /**
+     * IMPERATIVE STYLE: Verify OTP code
+     * Step-by-step validation and user update
+     */
     async verifyOTP(email: string, otpCode: string) {
 
         const user = await this.userService.findByEmail(email);
@@ -101,6 +135,10 @@ export class AuthService {
 
 
 
+    /**
+     * IMPERATIVE STYLE: Validate user credentials
+     * Step-by-step password verification
+     */
     async validateUser(email: string, plainPassword: string): Promise<SafeUser> {
         const user = await this.userService.findByEmailWithHash(email);
 
@@ -116,6 +154,10 @@ export class AuthService {
         return this.toSafeUser(user);
     }
 
+    /**
+     * IMPERATIVE STYLE: Login user
+     * Step-by-step validation and JWT generation
+     */
     async login(email: string, plainPassword: string) {
         const user = await this.validateUser(email, plainPassword);
 
@@ -127,16 +169,28 @@ export class AuthService {
         return { access_token, user };
     }
 
+    /**
+     * DECLARATIVE HELPER: Generate JWT cookie string
+     * Pure function
+     */
     async getCookieWithJwtToken(token: string) {
         return `access_token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     }
 
+    /**
+     * DECLARATIVE HELPER: Generate logout cookie string
+     * Pure function
+     */
     async getCookieForLogout() {
         return `access_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`;
     }
 
 
 
+    /**
+     * IMPERATIVE STYLE: Logout user by blacklisting token
+     * Step-by-step token verification and blacklisting
+     */
     async logout(token: string) {
         if (!token) throw new BadRequestException('No token provided');
 
@@ -162,11 +216,20 @@ export class AuthService {
     }
 
 
+    /**
+     * DECLARATIVE STYLE: Check if token is blacklisted
+     * Functional query returning boolean
+     */
     async isAccessTokenBlacklisted(token: string) {
         const hit = await this.blacklistModel.findOne({ token }).select('_id').lean();
         return !!hit;
     }
 
+    /**
+     * IMPERATIVE STYLE: Generic OTP sender with rate limiting
+     * Step-by-step OTP generation and email sending
+     * Follows DRY principle by consolidating OTP logic
+     */
     private async sendOtpGeneric(email: string, purpose: 'verification' | 'password-reset' | 'login', rateLimit: boolean,): Promise<void> {
 
         const user = await this.userService.findByEmail(email);
@@ -213,16 +276,28 @@ export class AuthService {
         }
     }
 
+    /**
+     * IMPERATIVE STYLE: Send OTP for verification
+     * Delegates to generic OTP sender
+     */
     async sendOTP(email: string): Promise<{ message: string }> {
         await this.sendOtpGeneric(email, 'verification', false);
         return { message: 'OTP sent to email' };
     }
 
+    /**
+     * IMPERATIVE STYLE: Resend OTP with rate limiting
+     * Delegates to generic OTP sender with rate limiting enabled
+     */
     async resendOTP(email: string): Promise<{ message: string }> {
         await this.sendOtpGeneric(email, 'verification', true);
         return { message: 'OTP resent successfully' };
     }
 
+    /**
+     * DECLARATIVE STYLE: Check OTP validity status
+     * Functional validation returning status object
+     */
     async checkOTPStatus(email: string) {
         const user = await this.userService.findByEmail(email);
         if (!user) throw new NotFoundException('User not found');
@@ -231,11 +306,19 @@ export class AuthService {
         return { valid, expiresAt: user.otpExpiresAt ?? undefined };
     }
 
+    /**
+     * IMPERATIVE STYLE: Initiate password reset
+     * Sends OTP for password reset
+     */
     async forgotPassword(email: string): Promise<{ message: string }> {
         await this.sendOtpGeneric(email, 'password-reset', false);
         return { message: 'Password reset OTP sent to email' };
     }
 
+    /**
+     * IMPERATIVE STYLE: Reset password with OTP
+     * Step-by-step OTP validation and password update
+     */
     async resetPassword(email: string, otpCode: string, newPassword: string) {
         const user = await this.userService.findByEmail(email);
         if (!user) throw new NotFoundException('User not found');

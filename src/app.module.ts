@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import {AuthModule} from "./auth/auth-module";
 import {UsersModule} from "./modules/user-module";
 import {ReservationModule} from "./modules/reservation-module";
+import {PaymentModule} from "./modules/payment-module";
 
 
 
@@ -21,6 +22,7 @@ import {ReservationModule} from "./modules/reservation-module";
         AuthModule,
         UsersModule,
         ReservationModule,
+        PaymentModule,
 
     ],
 

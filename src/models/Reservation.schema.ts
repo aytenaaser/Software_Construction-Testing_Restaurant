@@ -1,4 +1,23 @@
-// src/modules/reservations/schemas/reservation.schema.ts
+/**
+ * Reservation Schema
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Defines reservation data structure only
+ * - Open/Closed: Can be extended with new fields without breaking existing code
+ *
+ * Data Model for:
+ * - Customer information (name, email)
+ * - Reservation details (date, time, party size)
+ * - Table and user references
+ * - Reservation status tracking
+ * - Timestamps for audit trail
+ *
+ * Programming Paradigms:
+ * - DECLARATIVE: Uses Mongoose decorators and schema definition
+ *
+ * Performance:
+ * - Indexes on frequently queried fields for optimization
+ */
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
@@ -23,16 +42,16 @@ export class Reservation {
   customerEmail: string;
 
   @Prop({ required: true })
-  reservationDate: Date;
+  reservationDate: string;
 
-  @Prop({ required: true, match: /^\d{2}:\d{2}$/ })
+  @Prop({ required: true })
   reservationTime: string;
 
   @Prop({ required: true, min: 1, max: 20 })
   partySize: number;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Table', required: true })
-  tableId: MongooseSchema.Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Table', required: false })
+  tableId?: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId: MongooseSchema.Types.ObjectId;
@@ -40,7 +59,7 @@ export class Reservation {
   @Prop({
     type: String,
     enum: Object.values(ReservationStatus),
-    default: ReservationStatus.CONFIRMED
+    default: ReservationStatus.CONFIRMED,
   })
   status: ReservationStatus;
 
@@ -57,4 +76,3 @@ export const ReservationSchema = SchemaFactory.createForClass(Reservation);
 ReservationSchema.index({ userId: 1, reservationDate: -1 });
 ReservationSchema.index({ reservationDate: 1, reservationTime: 1, tableId: 1 });
 ReservationSchema.index({ status: 1, reservationDate: 1 });
-

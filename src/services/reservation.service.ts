@@ -3,21 +3,22 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Reservation, ReservationDocument } from '../models/Reservation.schema';
 import { CreateReservationDto, UpdateReservationDto, ReservationResponseDto } from '../dto/reservation-dto';
+import { ReservationMapperService } from './mappers/reservation-mapper.service';
 import { ReservationValidationStrategy, CompositeReservationValidator, BusinessHoursValidator, FutureDateValidator, PartySizeValidator } from './reservation-validators';
 
 /**
  * Reservation Service
  *
- * SOLID Principles Applied:
+ * - Single Responsibility: Only handles reservation business logic orchestration
  * - Single Responsibility: Only handles reservation business logic
- * - Open/Closed: Uses dependency injection and strategy pattern for extensibility
- * - Liskov Substitution: Uses interface-based validators
- * - Interface Segregation: Small, focused interfaces
+ * - Liskov Substitution: Uses interface-based validators and repositories
+ * - Interface Segregation: Small, focused interfaces (validators, repositories, mappers)
+ * - Dependency Inversion: Depends on abstractions (IReservationRepository, validators, mappers)
  * - Dependency Inversion: Depends on abstractions (validators), not concrete implementations
  *
- * Separation of Concerns:
- * - Validation logic delegated to validators
- * - Data mapping delegated to mapper
+ * - Validation logic delegated to validator strategies
+ * - Data mapping delegated to mapper service
+ * - Database operations delegated to repository
  * - Database operations isolated
  *
  * Programming Paradigms:
@@ -26,55 +27,53 @@ import { ReservationValidationStrategy, CompositeReservationValidator, BusinessH
  */
 @Injectable()
 export class ReservationService {
-    private readonly validator: ReservationValidationStrategy;
+  private readonly validator: ReservationValidationStrategy;
 
-    constructor(
-        @InjectModel(Reservation.name) private reservationModel: Model<ReservationDocument>,
-    ) {
-        // Strategy pattern: Compose validators using dependency injection
-        // This follows the Open/Closed Principle - easy to add more validators
-        this.validator = new CompositeReservationValidator([
-            new BusinessHoursValidator(),
-            new FutureDateValidator(),
-            new PartySizeValidator(),
-        ]);
-    }
+  constructor(
+    @InjectModel(Reservation.name)
+    private reservationModel: Model<ReservationDocument>,
+    private readonly mapper: ReservationMapperService,
+  ) {
+    // Strategy pattern: Compose validators using dependency injection
+    // This follows the Open/Closed Principle - easy to add more validators
+    this.validator = new CompositeReservationValidator([
+      new BusinessHoursValidator(),
+      new FutureDateValidator(),
+      new PartySizeValidator(),
+    ]);
+  }
 
     /**
-     * IMPERATIVE STYLE: Create a new reservation
-     * Step-by-step logic with explicit error handling and validation
-     */
-    async create(createReservationDto: CreateReservationDto): Promise<ReservationResponseDto> {
-        // Step 1: Validate input
-        const validationResult = await this.validator.validate(createReservationDto);
-        if (!validationResult.valid) {
-            throw new BadRequestException({
-                message: 'Reservation validation failed',
-                errors: validationResult.errors,
-            });
+   * IMPERATIVE STYLE: Create a new reservation
+   * Step-by-step validation, conflict checking, and creation
+   */
+  async create(createReservationDto: CreateReservationDto, userId: string): Promise<ReservationResponseDto> {
+    // Step 1: Validate input
+    const validationResult =
+      await this.validator.validate(createReservationDto);
+    if (!validationResult.valid) {
+      throw new BadRequestException({
+        message: 'Reservation validation failed',
+        errors: validationResult.errors,
+      });
         }
 
-        // Step 2: Check for duplicate reservation (same user, same date/time, same table)
+        // Step 2: Check for duplicate reservation (same user, same date/time)
         const existingReservation = await this.reservationModel.findOne({
-            // userId: new Types.ObjectId(createReservationDto.userId),
-            // tableId: new Types.ObjectId(createReservationDto.tableId),
-            reservationDate: {
-                $gte: new Date(createReservationDto.reservationDate),
-                $lt: new Date(new Date(createReservationDto.reservationDate).getTime() + 24 * 60 * 60 * 1000),
-            },
+            userId: new Types.ObjectId(userId),
+            reservationDate: createReservationDto.reservationDate,
             reservationTime: createReservationDto.reservationTime,
             status: { $in: ['confirmed', 'pending'] },
         });
 
         if (existingReservation) {
-            throw new ConflictException('A reservation already exists for this date, time, and table');
+            throw new ConflictException('You already have a reservation for this date and time');
         }
 
         // Step 3: Create reservation document
         const reservation = new this.reservationModel({
             ...createReservationDto,
-            // userId: new Types.ObjectId(createReservationDto.userId),
-            // tableId: new Types.ObjectId(createReservationDto.tableId),
+            userId: new Types.ObjectId(userId),
             status: 'confirmed',
         });
 

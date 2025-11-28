@@ -1,3 +1,21 @@
+/**
+ * Email Service
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Only handles email sending operations
+ * - Open/Closed: Can be extended with new email templates without modifying existing ones
+ * - Dependency Inversion: Uses nodemailer abstraction
+ *
+ * Responsibilities:
+ * - Configure email transporter
+ * - Send verification emails with OTP
+ * - Send password reset emails with OTP
+ * - Send confirmation emails
+ *
+ * Programming Paradigms:
+ * - IMPERATIVE: Step-by-step email sending with error handling
+ * - DECLARATIVE: Email templates using HTML strings
+ */
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
@@ -5,6 +23,10 @@ import * as nodemailer from 'nodemailer';
 export class MailService {
     private transporter;
 
+    /**
+     * IMPERATIVE: Initialize email transporter with configuration
+     * Step-by-step setup with verification
+     */
     constructor() {
 
         this.transporter = nodemailer.createTransport({
@@ -24,6 +46,10 @@ export class MailService {
 
 
 
+    /**
+     * IMPERATIVE STYLE: Send verification email with OTP
+     * Step-by-step email composition and sending
+     */
     async sendVerificationEmail(email: string, otp: string) {
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -47,6 +73,10 @@ export class MailService {
         return this.transporter.sendMail(mailOptions);
     }
 
+    /**
+     * IMPERATIVE STYLE: Send password reset email with OTP
+     * Step-by-step email composition and sending
+     */
     async sendPasswordResetEmail(email: string, otp: string) {
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -71,6 +101,10 @@ export class MailService {
         return this.transporter.sendMail(mailOptions);
     }
 
+    /**
+     * IMPERATIVE STYLE: Send email verification confirmation
+     * Step-by-step email composition and sending
+     */
     async VerifiedEmail(email: string, otp: string) {
         const mailOptions = {
             from: process.env.EMAIL_USER,

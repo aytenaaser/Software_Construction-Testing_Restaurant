@@ -1,0 +1,280 @@
+### Login
+POST http://localhost:8000/auth/login
+Content-Type: application/json
+
+{
+  "email": "yasmin.farag532007@gmail.com",
+  "password": "Yasmin1234"
+}
+
+###
+
+### Register New User
+POST http://localhost:8000/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "Password123",
+  "phone": "+1234567890",
+  "role": "customer"
+}
+
+###
+
+### Verify OTP
+POST http://localhost:8000/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "otp": "123456"
+}
+
+###
+
+### Resend OTP
+POST http://localhost:8000/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+###
+
+### Check OTP Status
+GET http://localhost:8000/auth/otp-status/test@example.com
+
+###
+
+### Forgot Password
+POST http://localhost:8000/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "yasmin.farag532007@gmail.com"
+}
+
+###
+
+### Reset Password
+POST http://localhost:8000/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "yasmin.farag532007@gmail.com",
+  "otpCode": "123456",
+  "newPassword": "NewPassword123"
+}
+
+###
+
+### Logout
+POST http://localhost:8000/auth/logout
+
+###
+
+### ======================
+### RESERVATIONS
+### ======================
+
+### Create Reservation (Must be logged in)
+POST http://localhost:8000/reservations
+Content-Type: application/json
+
+{
+  "customerName": "Yasmin Farag",
+  "customerEmail": "yasmin.farag532007@gmail.com",
+  "reservationDate": "2024-12-20",
+  "reservationTime": "19:00",
+  "partySize": 4
+}
+
+###
+
+### Get All Reservations
+GET http://localhost:8000/reservations
+
+###
+
+### Get Reservation by ID (Replace with actual ID)
+GET http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9
+
+###
+
+### Get Reservations by Date Range
+GET http://localhost:8000/reservations/range?startDate=2024-12-01&endDate=2024-12-31
+
+###
+
+### Get User Reservations (Replace with actual user ID)
+GET http://localhost:8000/reservations/user/674906d26cf2cc1c6cc95ed9
+
+###
+
+### Check Availability
+GET http://localhost:8000/reservations/availability/check?date=2024-12-20&time=19:00&partySize=4
+
+###
+
+### Update Reservation (Replace with actual ID)
+PUT http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9
+Content-Type: application/json
+
+{
+  "reservationDate": "2024-12-21",
+  "reservationTime": "20:00",
+  "partySize": 6
+}
+
+###
+
+### Cancel Reservation (Replace with actual ID)
+PUT http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9/cancel
+
+###
+
+### Delete Reservation (Replace with actual ID)
+DELETE http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9
+
+###
+
+### ======================
+### PAYMENTS
+### ======================
+
+### Create Payment (Must be logged in)
+POST http://localhost:8000/payments
+Content-Type: application/json
+
+{
+  "reservationId": "674906d26cf2cc1c6cc95ed9",
+  "amount": 200.00,
+  "method": "credit_card"
+}
+
+###
+
+### Get All Payments (Admin/Staff only)
+GET http://localhost:8000/payments
+
+###
+
+### Get Payment by ID
+GET http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
+
+###
+
+### Get My Payments
+GET http://localhost:8000/payments/my-payments
+
+###
+
+### Get Payments by Reservation ID
+GET http://localhost:8000/payments/reservation/674906d26cf2cc1c6cc95ed9
+
+###
+
+### Get Payments by Customer ID (Admin/Staff only)
+GET http://localhost:8000/payments/customer/674906d26cf2cc1c6cc95ed9
+
+###
+
+### Get Payments by Status (Admin/Staff only)
+GET http://localhost:8000/payments/status/pending
+
+###
+
+### Get Payments by Date Range (Admin/Staff only)
+GET http://localhost:8000/payments/range?startDate=2024-12-01&endDate=2024-12-31
+
+###
+
+### Get Payment Statistics (Admin/Staff only)
+GET http://localhost:8000/payments/statistics
+
+###
+
+### Complete Payment (Admin/Staff only)
+PUT http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9/complete
+
+###
+
+### Fail Payment (Admin/Staff only)
+PUT http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9/fail
+
+###
+
+### Update Payment (Admin/Staff only)
+PUT http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
+Content-Type: application/json
+
+{
+  "status": "completed",
+  "amount": 250.00
+}
+
+###
+
+### Delete Payment (Admin only)
+DELETE http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
+
+###
+
+### ======================
+### USERS
+### ======================
+
+### Get My Profile
+GET http://localhost:8000/users/profile
+
+###
+
+### Update My Profile
+PUT http://localhost:8000/users/profile
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "phone": "+1987654321"
+}
+
+###
+
+### Get All Users (Admin only)
+GET http://localhost:8000/users
+
+###
+
+### Get Staff Members (Admin only)
+GET http://localhost:8000/users/staff
+
+###
+
+### Get Customers (Admin/Staff only)
+GET http://localhost:8000/users/customers
+
+###
+
+### Get User by ID (Admin only)
+GET http://localhost:8000/users/674906d26cf2cc1c6cc95ed9
+
+###
+
+### Update User Role (Admin only)
+PUT http://localhost:8000/users/674906d26cf2cc1c6cc95ed9/role
+Content-Type: application/json
+
+{
+  "role": "staff"
+}
+
+###
+
+### Delete User (Admin only)
+DELETE http://localhost:8000/users/674906d26cf2cc1c6cc95ed9
+
+###
+

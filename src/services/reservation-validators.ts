@@ -1,68 +1,65 @@
 import { ReservationDocument } from '../models/Reservation.schema';
 
 /**
+ * Type for validatable reservation data
+ * Allows validation to work with DTOs, documents, or any object with these fields
+ */
+export type ValidatableReservation = {
+  reservationDate: Date | string;
+  reservationTime: string;
+  partySize: number;
+  [key: string]: any; // Allow additional properties
+};
+
+/**
  * Strategy interface for reservation validation
  * Follows Strategy Pattern - allows different validation strategies to be plugged in
  * Supports Open/Closed Principle - open for extension, closed for modification
  */
 export interface ReservationValidationStrategy {
-    validate(reservation: ReservationDocument | any): Promise<{ valid: boolean; errors: string[] }>;
+  validate(
+    reservation: ValidatableReservation,
+  ): Promise<{ valid: boolean; errors: string[] }>;
 }
 
 /**
  * Validates business hours constraint
- * Imperative approach - explicit step-by-step validation logic
+ * NO CONSTRAINTS - accepts any time
  */
 export class BusinessHoursValidator implements ReservationValidationStrategy {
-    private readonly BUSINESS_HOURS_START = 10; // 10:00 AM
-    private readonly BUSINESS_HOURS_END = 22; // 10:00 PM
+  validate(
+    reservation: ValidatableReservation,
+  ): Promise<{ valid: boolean; errors: string[] }> {
+    const errors: string[] = [];
 
-    async validate(reservation: ReservationDocument | any): Promise<{ valid: boolean; errors: string[] }> {
-        const errors: string[] = [];
-
-        // Extract hour from time string (HH:mm format)
-        const [hourStr] = reservation.reservationTime.split(':');
-        const hour = parseInt(hourStr, 10);
-
-        // Imperative validation logic
-        if (isNaN(hour)) {
-            errors.push('Invalid time format. Expected HH:mm');
-        } else if (hour < this.BUSINESS_HOURS_START || hour >= this.BUSINESS_HOURS_END) {
-            errors.push(`Reservation time must be between ${this.BUSINESS_HOURS_START}:00 and ${this.BUSINESS_HOURS_END}:00`);
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors,
-        };
+    const timeValue = (reservation as any).reservationTime;
+    if (typeof timeValue !== 'string') {
+      errors.push('Missing or invalid reservationTime. Expected string');
+      return Promise.resolve({ valid: errors.length === 0, errors });
     }
+
+    // No time constraints - any time is valid
+    return Promise.resolve({ valid: true, errors: [] });
+  }
 }
 
 /**
  * Validates reservation date constraint
- * Imperative approach - explicit validation for future dates
+ * NO CONSTRAINTS - accepts any date
  */
 export class FutureDateValidator implements ReservationValidationStrategy {
-    private readonly MIN_ADVANCE_HOURS = 2; // Must book at least 2 hours in advance
+  validate(reservation: ValidatableReservation): Promise<{ valid: boolean; errors: string[] }> {
+    const errors: string[] = [];
 
-    async validate(reservation: ReservationDocument | any): Promise<{ valid: boolean; errors: string[] }> {
-        const errors: string[] = [];
-
-        const now = new Date();
-        const reservationDatetime = new Date(reservation.reservationDate);
-
-        // Check if reservation date is in the future
-        const timeDiffHours = (reservationDatetime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-        if (timeDiffHours < this.MIN_ADVANCE_HOURS) {
-            errors.push(`Reservation must be made at least ${this.MIN_ADVANCE_HOURS} hours in advance`);
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors,
-        };
+    const raw = (reservation as any).reservationDate;
+    if (!raw || typeof raw !== 'string') {
+      errors.push('Missing or invalid reservationDate');
+      return Promise.resolve({ valid: errors.length === 0, errors });
     }
+
+    // No date constraints - any date is valid
+    return Promise.resolve({ valid: true, errors: [] });
+  }
 }
 
 /**
@@ -70,23 +67,27 @@ export class FutureDateValidator implements ReservationValidationStrategy {
  * Imperative approach - explicit capacity checking
  */
 export class PartySizeValidator implements ReservationValidationStrategy {
-    private readonly MAX_PARTY_SIZE = 20;
-    private readonly MIN_PARTY_SIZE = 1;
+  private readonly MAX_PARTY_SIZE = 20;
+  private readonly MIN_PARTY_SIZE = 1;
 
-    async validate(reservation: ReservationDocument | any): Promise<{ valid: boolean; errors: string[] }> {
-        const errors: string[] = [];
 
-        if (reservation.partySize < this.MIN_PARTY_SIZE) {
-            errors.push(`Party size must be at least ${this.MIN_PARTY_SIZE}`);
-        } else if (reservation.partySize > this.MAX_PARTY_SIZE) {
-            errors.push(`Party size cannot exceed ${this.MAX_PARTY_SIZE}`);
-        }
+  validate(reservation: ValidatableReservation): Promise<{ valid: boolean; errors: string[] }> {
+    const errors: string[] = [];
 
-        return {
-            valid: errors.length === 0,
-            errors,
-        };
+    const partySize = (reservation as any).partySize;
+    if (typeof partySize !== 'number') {
+      errors.push('Invalid or missing partySize');
+      return Promise.resolve({ valid: errors.length === 0, errors });
     }
+
+    if (partySize < this.MIN_PARTY_SIZE) {
+      errors.push(`Party size must be at least ${this.MIN_PARTY_SIZE}`);
+    } else if (partySize > this.MAX_PARTY_SIZE) {
+      errors.push(`Party size cannot exceed ${this.MAX_PARTY_SIZE}`);
+    }
+
+    return Promise.resolve({ valid: errors.length === 0, errors });
+  }
 }
 
 /**
@@ -95,21 +96,12 @@ export class PartySizeValidator implements ReservationValidationStrategy {
  * Declarative approach - composition of validators
  */
 export class CompositeReservationValidator implements ReservationValidationStrategy {
-    constructor(private readonly validators: ReservationValidationStrategy[]) {}
+  constructor(private readonly validators: ReservationValidationStrategy[]) {}
 
-    async validate(reservation: ReservationDocument | any): Promise<{ valid: boolean; errors: string[] }> {
-        // Declarative approach - using Promise.all and map
-        const results = await Promise.all(
-            this.validators.map(validator => validator.validate(reservation))
-        );
-
-        // Combine all errors
-        const allErrors = results.reduce((acc, result) => [...acc, ...result.errors], [] as string[]);
-
-        return {
-            valid: allErrors.length === 0,
-            errors: allErrors,
-        };
-    }
+  validate(reservation: ValidatableReservation): Promise<{ valid: boolean; errors: string[] }> {
+    return Promise.all(this.validators.map((v) => v.validate(reservation))).then((results) => {
+      const allErrors = results.reduce((acc, r) => acc.concat(r.errors), [] as string[]);
+      return { valid: allErrors.length === 0, errors: allErrors };
+    });
+  }
 }
-

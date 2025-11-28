@@ -3,7 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Reservation, ReservationSchema } from '../models/Reservation.schema';
 import { ReservationService } from '../services/reservation.service';
 import { ReservationController } from '../controllers/reservation-controller';
-import {AuthModule} from "../auth/auth-module";
+import { ReservationMapperService } from '../services/mappers/reservation-mapper.service';
+import { AuthModule } from '../auth/auth-module';
 
 /**
  * Reservation Module
@@ -15,19 +16,17 @@ import {AuthModule} from "../auth/auth-module";
  * - Loosely coupled with other modules
  */
 @Module({
-    imports: [
-        AuthModule,
-        MongooseModule.forFeature([
-            {
-                name: Reservation.name,
-                schema: ReservationSchema,
-            },
-
-        ]),
-    ],
-    controllers: [ReservationController],
-    providers: [ReservationService],
-    exports: [ReservationService], // Export service for use in other modules
+  imports: [
+    AuthModule,
+    MongooseModule.forFeature([
+      {
+        name: Reservation.name,
+        schema: ReservationSchema,
+      },
+    ]),
+  ],
+  controllers: [ReservationController],
+  providers: [ReservationService, ReservationMapperService],
+  exports: [ReservationService], // Export service for use in other modules
 })
 export class ReservationModule {}
-

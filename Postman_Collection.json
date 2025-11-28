@@ -1,1 +1,705 @@
+{
+  "info": {
+    "name": "Restaurant Reservation System API",
+    "description": "Complete API collection for testing the Restaurant Reservation System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "resend-otp"]
+            }
+          }
+        },
+        {
+          "name": "Check OTP Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/otp-status/john.doe@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp-status", "john.doe@example.com"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"otpCode\": \"123456\",\n  \"newPassword\": \"NewPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Updated Doe\",\n  \"phone\": \"+1987654321\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get Staff Members (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "staff"]
+            }
+          }
+        },
+        {
+          "name": "Get Customers (Admin/Staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "customers"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439011"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User Role (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:id/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id", "role"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439011"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439011"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Create Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john.doe@example.com\",\n  \"reservationDate\": \"2024-12-20\",\n  \"reservationTime\": \"19:00\",\n  \"partySize\": 4\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations"]
+            }
+          }
+        },
+        {
+          "name": "Get All Reservations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations"]
+            }
+          }
+        },
+        {
+          "name": "Get Reservation by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f191e810c19729de860ea"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reservations by Date Range",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/range?startDate=2024-12-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", "range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-12-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Reservations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/user/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", "user", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "507f1f77bcf86cd799439011"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/availability/check?date=2024-12-20&time=19:00&partySize=4",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", "availability", "check"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2024-12-20"
+                },
+                {
+                  "key": "time",
+                  "value": "19:00"
+                },
+                {
+                  "key": "partySize",
+                  "value": "4"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Reservation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationDate\": \"2024-12-21\",\n  \"reservationTime\": \"20:00\",\n  \"partySize\": 6\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f191e810c19729de860ea"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Reservation",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/:id/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", ":id", "cancel"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f191e810c19729de860ea"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Reservation",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/reservations/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["reservations", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f191e810c19729de860ea"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationId\": \"507f191e810c19729de860ea\",\n  \"amount\": 200.00,\n  \"method\": \"credit_card\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Get All Payments (Admin/Staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439014"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Payments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/my-payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "my-payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payments by Reservation",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/reservation/:reservationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "reservation", ":reservationId"],
+              "variable": [
+                {
+                  "key": "reservationId",
+                  "value": "507f191e810c19729de860ea"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payments by Customer (Admin/Staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/customer/:customerId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "customer", ":customerId"],
+              "variable": [
+                {
+                  "key": "customerId",
+                  "value": "507f1f77bcf86cd799439011"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payments by Status (Admin/Staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/status/:status",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "status", ":status"],
+              "variable": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payments by Date Range (Admin/Staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/range?startDate=2024-12-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-12-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Statistics (Admin/Staff)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/payments/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Complete Payment (Admin/Staff)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/payments/:id/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":id", "complete"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439014"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fail Payment (Admin/Staff)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/payments/:id/fail",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":id", "fail"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439014"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Payment (Admin/Staff)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"amount\": 250.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439014"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Payment (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/payments/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "507f1f77bcf86cd799439014"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
 
