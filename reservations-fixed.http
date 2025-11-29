@@ -1,0 +1,259 @@
+# ===============================================
+# RESERVATION SYSTEM - COMPLETE API TESTS
+# ===============================================
+# All endpoints have been fixed with proper security and business logic
+# Changes:
+# 1. User profile endpoints now work (fixed JWT payload sub vs userId)
+# 2. Reservations use authenticated user's email (no spoofing)
+# 3. Pending approval workflow implemented
+# 4. Role-based access control on all endpoints
+# 5. Table availability checking
+# 6. Customer gets only their reservations
+# 7. Admin manages all reservations
+# ===============================================
+
+### ======================
+### AUTHENTICATION
+### ======================
+
+### Login as Admin
+POST http://localhost:8000/auth/login
+Content-Type: application/json
+
+{
+  "email": "eyad.admin2@gmail.com",
+  "password": "Eyad2186"
+}
+### Save the access_token from response cookie
+
+### Register New Customer
+POST http://localhost:8000/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Customer",
+  "email": "john.customer@example.com",
+  "password": "Password123",
+  "phone": "+1234567890",
+  "role": "customer"
+}
+
+### Verify OTP
+POST http://localhost:8000/auth/verify-otp
+Content-Type: application/json
+
+{
+  "email": "john.customer@example.com",
+  "otp": "123456"
+}
+
+### Logout
+POST http://localhost:8000/auth/logout
+
+### ======================
+### USER PROFILE (FIXED)
+### ======================
+
+### Get My Profile (Now works - fixed JWT payload)
+GET http://localhost:8000/users/profile
+
+### Update My Profile (Now works)
+PUT http://localhost:8000/users/profile
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "phone": "+1987654321"
+}
+
+### Get All Users (Admin only)
+GET http://localhost:8000/users
+
+### Get Staff Members (Admin only - Now returns only STAFF, not ADMIN)
+GET http://localhost:8000/users/staff
+
+### Get Customers (Admin/Staff only)
+GET http://localhost:8000/users/customers
+
+### ======================
+### TABLES (NEW - CRUD Operations)
+### ======================
+
+### Create Table (Admin only)
+POST http://localhost:8000/tables
+Content-Type: application/json
+
+{
+  "capacity": 4,
+  "isAvailable": true
+}
+
+### Create more tables
+POST http://localhost:8000/tables
+Content-Type: application/json
+
+{
+  "capacity": 6,
+  "isAvailable": true
+}
+
+### Create large table
+POST http://localhost:8000/tables
+Content-Type: application/json
+
+{
+  "capacity": 8,
+  "isAvailable": true
+}
+
+### Get All Tables
+GET http://localhost:8000/tables
+
+### Get Available Tables Only
+GET http://localhost:8000/tables/available
+
+### Get Table by ID (replace with actual ID)
+GET http://localhost:8000/tables/675066a05d8ae23b84c1ea23
+
+### Update Table (Admin only)
+PUT http://localhost:8000/tables/675066a05d8ae23b84c1ea23
+Content-Type: application/json
+
+{
+  "capacity": 5,
+  "isAvailable": true
+}
+
+### Delete Table (Admin only)
+DELETE http://localhost:8000/tables/675066a05d8ae23b84c1ea23
+
+### ======================
+### RESERVATIONS (FIXED - Complete Security & Business Logic)
+### ======================
+
+### Create Reservation (Customer - uses authenticated user's email, pending status)
+POST http://localhost:8000/reservations
+Content-Type: application/json
+
+{
+  "customerName": "John Doe",
+  "reservationDate": "2024-12-25",
+  "reservationTime": "19:00",
+  "partySize": 4
+}
+### NOTE: customerEmail removed - now automatically uses logged-in user's email
+### Status is 'pending' - awaits admin approval
+
+### Get My Reservations (Customer - shows only their reservations)
+GET http://localhost:8000/reservations/my-reservations
+# NEW ENDPOINT: Returns all reservations for the logged-in customer
+
+### Check Availability (Shows actual available tables)
+GET http://localhost:8000/reservations/availability/check?date=2024-12-25&time=19:00&partySize=4
+# FIXED: Now returns actual available tables with IDs
+
+### Get Available Tables (Returns list of tables)
+GET http://localhost:8000/reservations/available-tables?date=2024-12-25&time=19:00&partySize=4
+# NEW ENDPOINT: Shows which specific tables are available
+
+### Update My Reservation (Customer can update their own, Admin can update any)
+PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
+Content-Type: application/json
+
+{
+  "reservationDate": "2024-12-26",
+  "reservationTime": "20:00",
+  "partySize": 6
+}
+### FIXED: Checks availability, verifies ownership
+
+### Cancel My Reservation (Customer can cancel their own, Admin can cancel any)
+PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd/cancel
+# FIXED: Authorization check
+
+### ======================
+### ADMIN RESERVATION MANAGEMENT
+### ======================
+
+### Get All Reservations (Admin only)
+GET http://localhost:8000/reservations
+# RESTRICTED: Only admins can see all reservations
+
+### Get Reservations by Date Range (Admin only)
+GET http://localhost:8000/reservations/range?startDate=2024-12-01&endDate=2024-12-31
+# FIXED: Date comparison logic, Admin only
+
+### Get Reservation by ID (Admin only)
+GET http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
+# RESTRICTED: Admin only
+
+### Approve Reservation (Admin only - Assigns table and confirms)
+PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd/approve
+Content-Type: application/json
+
+{
+  "tableId": "675066a05d8ae23b84c1ea23"
+}
+### NEW: Admin approves pending reservation and assigns a table
+### Validates table capacity and availability
+
+### Reject Reservation (Admin only - Cancels pending reservation)
+PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd/reject
+# NEW: Admin rejects pending reservation
+
+### Delete Reservation (Admin only)
+DELETE http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
+# RESTRICTED: Admin only
+
+### ======================
+### PAYMENTS
+### ======================
+
+### Create Payment (Must be logged in)
+POST http://localhost:8000/payments
+Content-Type: application/json
+
+{
+  "reservationId": "674906d26cf2cc1c6cc95ed9",
+  "amount": 200.00,
+  "method": "credit_card"
+}
+
+### Get My Payments
+GET http://localhost:8000/payments/my-payments
+
+### Get All Payments (Admin/Staff only)
+GET http://localhost:8000/payments
+
+### Get Payments by Status (Admin/Staff only)
+GET http://localhost:8000/payments/status/completed
+
+### Complete Payment (Admin/Staff only)
+PUT http://localhost:8000/payments/692a82b4cd48634a12b0cf3f/complete
+
+### ======================
+### SUMMARY OF FIXES
+### ======================
+#
+# SECURITY FIXES:
+# 1. ✅ JWT payload fixed (sub instead of userId) - profile endpoints work
+# 2. ✅ customerEmail removed from DTO - uses authenticated user's email
+# 3. ✅ Role-based access control on all reservation endpoints
+# 4. ✅ Authorization checks for update/cancel (owner or admin only)
+#
+# BUSINESS LOGIC FIXES:
+# 5. ✅ Pending approval workflow (reservations start as pending)
+# 6. ✅ Admin approve/reject endpoints
+# 7. ✅ Table availability checking with actual table data
+# 8. ✅ Date range query fixed (proper string comparison)
+# 9. ✅ Customer endpoint to get only their reservations
+# 10. ✅ Admin gets all reservations in system
+#
+# NEW FEATURES:
+# 11. ✅ Table CRUD operations (admin only)
+# 12. ✅ Get available tables endpoint
+# 13. ✅ Staff vs Admin separation (staff endpoint doesn't return admins)
+# 14. ✅ Table assignment on approval
+# 15. ✅ Conflict checking for table assignments
+#
+

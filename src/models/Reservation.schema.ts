@@ -56,10 +56,17 @@ export class Reservation {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId: MongooseSchema.Types.ObjectId;
 
+  // Menu Pre-order Support
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'MenuOrder' })
+  menuOrderId?: MongooseSchema.Types.ObjectId;
+
+  @Prop({ default: false })
+  hasPreOrder: boolean;
+
   @Prop({
     type: String,
     enum: Object.values(ReservationStatus),
-    default: ReservationStatus.CONFIRMED,
+    default: ReservationStatus.PENDING,
   })
   status: ReservationStatus;
 

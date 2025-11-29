@@ -3,36 +3,36 @@ POST http://localhost:8000/auth/login
 Content-Type: application/json
 
 {
-  "email": "yasmin.farag532007@gmail.com",
-  "password": "Yasmin1234"
+  "email": "eyad.admin2@gmail.com",
+  "password": "Eyad2186"
 }
 
-###
+###Tamam
 
 ### Register New User
 POST http://localhost:8000/auth/register
 Content-Type: application/json
 
 {
-  "name": "Test User",
-  "email": "test@example.com",
-  "password": "Password123",
+  "name": "Eyad Ahmed ",
+  "email": "eyad.admin2@gmail.com",
+  "password": "Eyad2186",
   "phone": "+1234567890",
-  "role": "customer"
+  "role": "admin"
 }
 
-###
+###Tamam
 
 ### Verify OTP
 POST http://localhost:8000/auth/verify-otp
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "otp": "123456"
+  "email": "eyad.admin2@gmail.com",
+  "otp": "957989"
 }
 
-###
+###Tamam
 
 ### Resend OTP
 POST http://localhost:8000/auth/resend-otp
@@ -42,39 +42,39 @@ Content-Type: application/json
   "email": "test@example.com"
 }
 
-###
+###msh mohem
 
 ### Check OTP Status
 GET http://localhost:8000/auth/otp-status/test@example.com
 
-###
+###msh mohem
 
 ### Forgot Password
 POST http://localhost:8000/auth/forgot-password
 Content-Type: application/json
 
 {
-  "email": "yasmin.farag532007@gmail.com"
+  "email": "eyad.admin2@gmail.com"
 }
 
-###
+###sha8ala
 
 ### Reset Password
 POST http://localhost:8000/auth/reset-password
 Content-Type: application/json
 
 {
-  "email": "yasmin.farag532007@gmail.com",
-  "otpCode": "123456",
-  "newPassword": "NewPassword123"
+  "email": "eyad.admin2@gmail.com",
+  "otpCode": "357402",
+  "newPassword": "Eyad2186"
 }
 
-###
+###sha8ala
 
 ### Logout
 POST http://localhost:8000/auth/logout
 
-###
+###tamam
 
 ### ======================
 ### RESERVATIONS
@@ -92,35 +92,35 @@ Content-Type: application/json
   "partySize": 4
 }
 
-###
+###tamam bas 3amalt b email msh mawgood fel database
 
 ### Get All Reservations
 GET http://localhost:8000/reservations
 
-###
+###el mafrood admin bas w wa7ed el customer bas
 
 ### Get Reservation by ID (Replace with actual ID)
-GET http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9
+GET http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
 
-###
+###el mafrood admin bas
 
 ### Get Reservations by Date Range
 GET http://localhost:8000/reservations/range?startDate=2024-12-01&endDate=2024-12-31
 
-###
+###200ok bas mafeesh return body although fe el date range dah fel database
 
 ### Get User Reservations (Replace with actual user ID)
-GET http://localhost:8000/reservations/user/674906d26cf2cc1c6cc95ed9
+GET http://localhost:8000/reservations/user/
 
-###
+###mafeesh reservations fel profile beta3y although 3amalt b account
 
 ### Check Availability
 GET http://localhost:8000/reservations/availability/check?date=2024-12-20&time=19:00&partySize=4
 
-###
+###hases fe haga 8alat fel logic
 
 ### Update Reservation (Replace with actual ID)
-PUT http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9
+PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
 Content-Type: application/json
 
 {
@@ -129,17 +129,17 @@ Content-Type: application/json
   "partySize": 6
 }
 
-###
+###el mafrood y check availability ba3den confirm el update, aw y request ba3den admin approve bas sha8ala
 
 ### Cancel Reservation (Replace with actual ID)
-PUT http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9/cancel
+PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd/cancel
 
-###
+### sha8ala
 
 ### Delete Reservation (Replace with actual ID)
-DELETE http://localhost:8000/reservations/674906d26cf2cc1c6cc95ed9
+DELETE http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
 
-###
+###Unathorized???
 
 ### ======================
 ### PAYMENTS
@@ -155,60 +155,60 @@ Content-Type: application/json
   "method": "credit_card"
 }
 
-###
+###Tamam, howa
 
 ### Get All Payments (Admin/Staff only)
 GET http://localhost:8000/payments
 
-###
+###Tamam
 
 ### Get Payment by ID
 GET http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
 
-###
+###tamam
 
 ### Get My Payments
 GET http://localhost:8000/payments/my-payments
 
-###
+###Tamam
 
 ### Get Payments by Reservation ID
 GET http://localhost:8000/payments/reservation/674906d26cf2cc1c6cc95ed9
 
-###
+###Tmam
 
 ### Get Payments by Customer ID (Admin/Staff only)
-GET http://localhost:8000/payments/customer/674906d26cf2cc1c6cc95ed9
+GET http://localhost:8000/payments/customer/692a06148923e01e3cac14ec
 
-###
+### Tamam
 
 ### Get Payments by Status (Admin/Staff only)
-GET http://localhost:8000/payments/status/pending
+GET http://localhost:8000/payments/status/completed
 
-###
+###TAMAM
 
 ### Get Payments by Date Range (Admin/Staff only)
 GET http://localhost:8000/payments/range?startDate=2024-12-01&endDate=2024-12-31
 
-###
+###TAMAM
 
 ### Get Payment Statistics (Admin/Staff only)
 GET http://localhost:8000/payments/statistics
 
-###
+###TAMAM
 
 ### Complete Payment (Admin/Staff only)
-PUT http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9/complete
+PUT http://localhost:8000/payments/692a82b4cd48634a12b0cf3f/complete
 
-###
+###TAMAM
 
 ### Fail Payment (Admin/Staff only)
-PUT http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9/fail
+PUT http://localhost:8000/payments/692a82b4cd48634a12b0cf3f/fail
 
-###
+###tamam
 
 ### Update Payment (Admin/Staff only)
-PUT http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
+PUT http://localhost:8000/payments/692a82b4cd48634a12b0cf3f
 Content-Type: application/json
 
 {
@@ -216,12 +216,12 @@ Content-Type: application/json
   "amount": 250.00
 }
 
-###
+### TAMAM, BAS UPDATED A COMPLETE ONE??
 
 ### Delete Payment (Admin only)
-DELETE http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
+DELETE http://localhost:8000/payments/692a82b4cd48634a12b0cf3f
 
-###
+###tamam
 
 ### ======================
 ### USERS
@@ -230,7 +230,7 @@ DELETE http://localhost:8000/payments/674906d26cf2cc1c6cc95ed9
 ### Get My Profile
 GET http://localhost:8000/users/profile
 
-###
+###USER NOT FOUND
 
 ### Update My Profile
 PUT http://localhost:8000/users/profile
@@ -241,40 +241,44 @@ Content-Type: application/json
   "phone": "+1987654321"
 }
 
-###
+###User not found
 
 ### Get All Users (Admin only)
 GET http://localhost:8000/users
 
-###
+###TAMAM
 
 ### Get Staff Members (Admin only)
 GET http://localhost:8000/users/staff
 
-###
+### HOWA GAB EL ADMINS KOLOHOM, KEDA KEDA MAFEESH STAFF BAS HOWA EL ADMIN YO3TABAR STAFF??
 
 ### Get Customers (Admin/Staff only)
 GET http://localhost:8000/users/customers
 
-###
+###TAMAM
 
 ### Get User by ID (Admin only)
-GET http://localhost:8000/users/674906d26cf2cc1c6cc95ed9
+GET http://localhost:8000/users/692a06148923e01e3cac14ec
 
-###
+###Tamam
 
 ### Update User Role (Admin only)
-PUT http://localhost:8000/users/674906d26cf2cc1c6cc95ed9/role
+PUT http://localhost:8000/users/692a06148923e01e3cac14ec/role
 Content-Type: application/json
 
 {
   "role": "staff"
 }
 
-###
+###Tamam
 
 ### Delete User (Admin only)
-DELETE http://localhost:8000/users/674906d26cf2cc1c6cc95ed9
+DELETE http://localhost:8000/users/692a06148923e01e3cac14ec
 
-###
+###Tamam
 
+
+
+### Auth: Kolo Sha8al ma3amaltesh test 3ala resend-otp w verify-otp-status bas msh mohem
+###reservation: rage3 logic kolo

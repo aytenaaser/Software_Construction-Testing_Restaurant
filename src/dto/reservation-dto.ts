@@ -14,13 +14,11 @@ import { Type } from 'class-transformer';
 /**
  * DTO for creating a new reservation
  * Follows Single Responsibility Principle - only validates input data
+ * Note: customerEmail is NOT included - it's taken from authenticated user's profile
  */
 export class CreateReservationDto {
   @IsString({ message: 'Customer name must be a string' })
   customerName: string;
-
-  @IsEmail({}, { message: 'Invalid email format' })
-  customerEmail: string;
 
   @IsString({ message: 'Reservation date must be a string' })
   reservationDate: string;
@@ -32,9 +30,6 @@ export class CreateReservationDto {
   @Min(1, { message: 'Party size must be at least 1' })
   @Max(20, { message: 'Party size cannot exceed 20' })
   partySize: number;
-
-  // @IsMongoId({ message: 'Table ID must be a valid MongoDB ID' })
-  // tableId: string;
 }
 
 /**

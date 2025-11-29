@@ -1,0 +1,18 @@
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { MenuItem, MenuItemSchema } from '../models/MenuItem.schema';
+import { MenuService } from '../services/menu.service';
+import { MenuController } from '../controllers/menu-controller';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([
+      { name: MenuItem.name, schema: MenuItemSchema },
+    ]),
+  ],
+  controllers: [MenuController],
+  providers: [MenuService],
+  exports: [MenuService],
+})
+export class MenuModule {}
+

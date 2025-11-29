@@ -219,11 +219,12 @@ export class UsersService {
   /**
    * DECLARATIVE STYLE: Get staff members
    * Functional filtering and mapping
+   * Returns only STAFF role, not ADMIN
    */
   async getStaffMembers(): Promise<User[]> {
     const staff = await this.userModel
       .find({
-        role: { $in: [UserRole.STAFF, UserRole.ADMIN] },
+        role: UserRole.STAFF,
       })
       .select('-password');
 

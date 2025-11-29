@@ -44,13 +44,13 @@ export class UsersController {
   @Get('profile')
   async getProfile(@Request() req) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return this.usersService.findById(req.user.userId);
+    return this.usersService.findById(req.user.sub);
   }
 
   @Put('profile')
   async updateProfile(@Request() req, @Body() updateUserDto: any) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return this.usersService.update(req.user.userId, updateUserDto);
+    return this.usersService.update(req.user.sub, updateUserDto);
   }
 
   @Get()
