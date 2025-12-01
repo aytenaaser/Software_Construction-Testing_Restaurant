@@ -56,7 +56,7 @@ export class MenuOrderService {
     // Calculate total and prepare order items
     let totalAmount = 0;
     let estimatedTime = 0;
-    const orderItems = [];
+    const orderItems: any[] = [];
 
     for (const item of createMenuOrderDto.items) {
       const menuItem = await this.menuItemModel.findById(item.menuItemId);
@@ -77,9 +77,9 @@ export class MenuOrderService {
         menuItemName: menuItem.name,
         quantity: item.quantity,
         price: menuItem.price,
-        specialInstructions: item.specialInstructions,
-        allergyNote: item.allergyNote,
-      });
+        specialInstructions: item.specialInstructions || undefined,
+        allergyNote: item.allergyNote || undefined,
+      } as any);
 
       // Increment order count
       await this.menuService.incrementOrderCount(item.menuItemId);
@@ -165,7 +165,7 @@ export class MenuOrderService {
     if (updateMenuOrderDto.items) {
       let totalAmount = 0;
       let estimatedTime = 0;
-      const orderItems = [];
+      const orderItems: any[] = [];
 
       for (const item of updateMenuOrderDto.items) {
         const menuItem = await this.menuItemModel.findById(item.menuItemId);
@@ -182,9 +182,9 @@ export class MenuOrderService {
           menuItemName: menuItem.name,
           quantity: item.quantity,
           price: menuItem.price,
-          specialInstructions: item.specialInstructions,
-          allergyNote: item.allergyNote,
-        });
+          specialInstructions: item.specialInstructions || undefined,
+          allergyNote: item.allergyNote || undefined,
+        } as any);
       }
 
       order.items = orderItems;

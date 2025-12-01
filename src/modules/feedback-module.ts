@@ -4,6 +4,7 @@ import { Feedback, FeedbackSchema } from '../models/Feedback.schema';
 import { Reservation, ReservationSchema } from '../models/Reservation.schema';
 import { FeedbackService } from '../services/feedback.service';
 import { FeedbackController } from '../controllers/feedback-controller';
+import { AuthModule } from '../auth/auth-module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { FeedbackController } from '../controllers/feedback-controller';
       { name: Feedback.name, schema: FeedbackSchema },
       { name: Reservation.name, schema: ReservationSchema },
     ]),
+    AuthModule, // Import AuthModule for authentication guards
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService],

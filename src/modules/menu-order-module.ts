@@ -6,6 +6,7 @@ import { Reservation, ReservationSchema } from '../models/Reservation.schema';
 import { MenuOrderService } from '../services/menu-order.service';
 import { MenuOrderController, MenuOrderManagementController } from '../controllers/menu-order-controller';
 import { MenuModule } from './menu-module';
+import { AuthModule } from '../auth/auth-module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MenuModule } from './menu-module';
       { name: Reservation.name, schema: ReservationSchema },
     ]),
     MenuModule, // Import MenuModule to use MenuService
+    AuthModule, // Import AuthModule for authentication guards
   ],
   controllers: [MenuOrderController, MenuOrderManagementController],
   providers: [MenuOrderService],

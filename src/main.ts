@@ -24,10 +24,44 @@ async function bootstrap() {
     });
 
     const config = new DocumentBuilder()
-        .setTitle('HR System API')
-        .setDescription('API documentation — limited to safe public models (no secrets).')
+        .setTitle('Restaurant Reservation System API')
+        .setDescription(`
+            Complete API documentation for Restaurant Reservation System
+            
+            Features:
+            - Authentication with email verification
+            - Reservation management with email notifications
+            - Menu browsing and management
+            - Pre-order system
+            - Feedback and ratings
+            - Table management
+            - User management
+            
+            Note: Most endpoints require authentication. Use /auth/login to get your token.
+            Then click "Authorize" button and paste the token (without "Bearer" prefix).
+        `)
         .setVersion('1.0')
-        .addBearerAuth({type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header',}, 'access-token',).build();
+        .setContact('Restaurant Team', 'https://restaurant.com', 'support@restaurant.com')
+        .addTag('Authentication', 'User registration, login, and password management')
+        .addTag('Reservations', 'Create and manage table reservations')
+        .addTag('Menu', 'Browse and manage menu items')
+        .addTag('Pre-orders', 'Pre-order menu items with reservations')
+        .addTag('Feedback', 'Customer feedback and ratings')
+        .addTag('Tables', 'Table management and availability')
+        .addTag('Users', 'User account management')
+        .addTag('Payments', 'Payment processing')
+        .addCookieAuth('access_token', {
+            type: 'apiKey',
+            in: 'cookie',
+            name: 'access_token',
+        })
+        .addBearerAuth({
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            in: 'header',
+        }, 'JWT')
+        .build();
 
     const document = SwaggerModule.createDocument(app, config, {});
 

@@ -60,12 +60,12 @@ export class ReservationController {
   }
 
   /**
-   * Get all reservations (Admin only)
+   * Get all reservations (Admin and Staff)
    * GET /reservations
    * DECLARATIVE: Composition of database query and mapping
    */
   @Get()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<ReservationResponseDto[]> {
     return this.reservationService.findAll();
@@ -84,12 +84,12 @@ export class ReservationController {
   }
 
   /**
-   * Get reservations by date range (Admin only)
+   * Get reservations by date range (Admin and Staff)
    * GET /reservations/range?startDate=2024-12-01&endDate=2024-12-31
    * DECLARATIVE: Query filtering and mapping
    */
   @Get('range')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
   @HttpCode(HttpStatus.OK)
   async findByDateRange(
     @Query('startDate') startDateStr: string,
@@ -120,12 +120,24 @@ export class ReservationController {
   }
 
   /**
-   * Get a single reservation by ID (Admin only)
+   * Get reservations by user ID
+   * GET /reservations/user/:userId
+   * DECLARATIVE: Filtered query by user
+   */
+  @Get('user/:userId')
+  @HttpCode(HttpStatus.OK)
+  async findByUserId(
+    @Param('userId') userId: string,
+  ): Promise<ReservationResponseDto[]> {
+    return this.reservationService.getMyReservations(userId);
+  }
+
+  /**
+   * Get a single reservation by ID
    * GET /reservations/:id
    * IMPERATIVE: Single resource fetch with error handling
    */
   @Get(':id')
-  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   async findById(@Param('id') id: string): Promise<ReservationResponseDto> {
     return this.reservationService.findById(id);
@@ -150,10 +162,11 @@ export class ReservationController {
       );
     }
 
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) {
+    // Validate DD/MM/YYYY format
+    const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!datePattern.test(dateStr)) {
       throw new BadRequestException(
-        'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)',
+        'Invalid date format. Use DD/MM/YYYY format (e.g., 15/12/2025)',
       );
     }
 
@@ -164,11 +177,11 @@ export class ReservationController {
       );
     }
 
-    return this.reservationService.getAvailability(date, time, partySize);
+    return this.reservationService.getAvailability(dateStr, time, partySize);
   }
 
   /**
-   * Update a reservation (Owner or Admin only)
+   * Update a reservation
    * PUT /reservations/:id
    * IMPERATIVE: Step-by-step update with validation
    */
@@ -185,81 +198,27 @@ export class ReservationController {
   }
 
   /**
-   * Cancel a reservation (Owner or Admin only)
+   * Cancel a reservation
    * PUT /reservations/:id/cancel
    * IMPERATIVE: Status change operation
    */
   @Put(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  async cancel(@Param('id') id: string, @Request() req: any): Promise<ReservationResponseDto> {
+  async cancel(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<ReservationResponseDto> {
     const userId = req.user?.sub;
     const userRole = req.user?.role;
     return this.reservationService.cancel(id, userId, userRole);
   }
 
   /**
-   * Approve a reservation (Admin only)
-   * PUT /reservations/:id/approve
-   * Assigns a table and confirms the reservation
-   */
-  @Put(':id/approve')
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  async approve(
-    @Param('id') id: string,
-    @Body('tableId') tableId: string,
-  ): Promise<ReservationResponseDto> {
-    return this.reservationService.approveReservation(id, tableId);
-  }
-
-  /**
-   * Reject a reservation (Admin only)
-   * PUT /reservations/:id/reject
-   * Changes status to cancelled
-   */
-  @Put(':id/reject')
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  async reject(@Param('id') id: string): Promise<ReservationResponseDto> {
-    return this.reservationService.rejectReservation(id);
-  }
-
-  /**
-   * Get available tables for a time slot
-   * GET /reservations/available-tables?date=2024-12-20&time=19:00&partySize=4
-   * Returns list of available tables
-   */
-  @Get('available-tables')
-  @HttpCode(HttpStatus.OK)
-  async getAvailableTables(
-    @Query('date') dateStr: string,
-    @Query('time') time: string,
-    @Query('partySize') partySizeStr: string,
-  ): Promise<any[]> {
-    // Validate parameters
-    if (!dateStr || !time || !partySizeStr) {
-      throw new BadRequestException(
-        'date, time, and partySize query parameters are required',
-      );
-    }
-
-    const partySize = parseInt(partySizeStr, 10);
-    if (isNaN(partySize) || partySize < 1 || partySize > 20) {
-      throw new BadRequestException(
-        'partySize must be a number between 1 and 20',
-      );
-    }
-
-    return this.reservationService.getAvailableTables(dateStr, time, partySize);
-  }
-
-  /**
-   * Delete a reservation (Admin only)
+   * Delete a reservation
    * DELETE /reservations/:id
    * IMPERATIVE: Deletion with validation
    */
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string): Promise<void> {
     await this.reservationService.delete(id);

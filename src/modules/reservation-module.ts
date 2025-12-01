@@ -5,6 +5,7 @@ import { Table, TableSchema } from '../models/Table.schema';
 import { ReservationService } from '../services/reservation.service';
 import { ReservationController } from '../controllers/reservation-controller';
 import { ReservationMapperService } from '../services/mappers/reservation-mapper.service';
+import { ReservationReminderService } from '../services/reservation-reminder.service';
 import { AuthModule } from '../auth/auth-module';
 import { UsersModule } from './user-module';
 import { TableModule } from './table-module';
@@ -35,7 +36,11 @@ import { TableModule } from './table-module';
     ]),
   ],
   controllers: [ReservationController],
-  providers: [ReservationService, ReservationMapperService],
+  providers: [
+    ReservationService,
+    ReservationMapperService,
+    ReservationReminderService, // ✅ Enable automated reservation reminders
+  ],
   exports: [ReservationService], // Export service for use in other modules
 })
 export class ReservationModule {}

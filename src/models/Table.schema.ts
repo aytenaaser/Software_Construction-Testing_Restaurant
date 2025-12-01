@@ -11,6 +11,13 @@ export enum TableStatus {
   UNAVAILABLE = 'unavailable',
 }
 
+export enum TableLocation {
+  INDOOR = 'indoor',
+  OUTDOOR = 'outdoor',
+  WINDOW_SIDE = 'window_side',
+  PRIVATE_ROOM = 'private_room',
+}
+
 @Schema({ timestamps: true })
 export class Table {
   @Prop({ required: true })
@@ -20,10 +27,13 @@ export class Table {
   isAvailable: boolean;
 
   // 2D Layout Support - User Story: "As a customer, I want to view table availability in real time"
-  @Prop()
+  @Prop({ required: true, unique: true })
   tableNumber: string;
 
-  @Prop()
+  @Prop({ required: true, enum: Object.values(TableLocation), default: TableLocation.INDOOR })
+  location: TableLocation; // Location preference: indoor, outdoor, window side, private room
+
+  @Prop({ default: 'Ground Floor' })
   floor: string; // 'Ground Floor', 'First Floor', etc.
 
   @Prop({ type: Object })

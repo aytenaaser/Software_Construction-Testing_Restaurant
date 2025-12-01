@@ -40,11 +40,11 @@ export class OrderItem {
   @Prop({ required: true, min: 0 })
   price: number; // Price at time of order
 
-  @Prop()
-  specialInstructions: string;
+  @Prop({ required: false })
+  specialInstructions?: string;
 
-  @Prop()
-  allergyNote: string;
+  @Prop({ required: false })
+  allergyNote?: string;
 }
 
 @Schema({ timestamps: true })

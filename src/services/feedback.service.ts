@@ -60,7 +60,8 @@ export class FeedbackService {
       reservationId: new Types.ObjectId(createFeedbackDto.reservationId),
       userId: new Types.ObjectId(userId),
       isVerified: true, // Verified because linked to actual reservation
-      status: FeedbackStatus.PENDING,
+      status: FeedbackStatus.APPROVED, // Auto-approved - no confirmation needed
+      isPublic: true, // Make it public immediately
     });
 
     const saved = await feedback.save();
@@ -136,7 +137,7 @@ export class FeedbackService {
     }
 
     feedback.adminResponse = respondDto.adminResponse;
-    feedback.respondedBy = new Types.ObjectId(adminId);
+    feedback.respondedBy = new Types.ObjectId(adminId) as any;
     feedback.respondedAt = new Date();
 
     const updated = await feedback.save();
@@ -160,7 +161,9 @@ export class FeedbackService {
     }
 
     feedback.status = moderateDto.status as FeedbackStatus;
-    feedback.moderationNote = moderateDto.moderationNote;
+    if (moderateDto.moderationNote) {
+      feedback.moderationNote = moderateDto.moderationNote;
+    }
     feedback.isPublic = moderateDto.status === 'approved';
 
     const updated = await feedback.save();

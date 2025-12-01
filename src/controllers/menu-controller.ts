@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { MenuService } from '../services/menu.service';
 import { CreateMenuItemDto, UpdateMenuItemDto, MenuItemResponseDto } from '../dto/menu-dto';
 import { JwtAuthGuard } from '../auth/guards/authentication-guard';
@@ -25,6 +26,7 @@ import { Public } from '../auth/decorators/public-decorator';
  * Handles menu management endpoints
  * Public endpoints for viewing, protected endpoints for management
  */
+@ApiTags('Menu')
 @Controller('menu')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MenuController {
@@ -43,10 +45,22 @@ export class MenuController {
 
   /**
    * Get all menu items (Public)
-   * GET /menu?category=appetizer&available=true&search=pasta
+   * GET /menu - Get ALL menu items (no parameters required)
+   * GET /menu?category=appetizer - Filter by category (optional)
+   * GET /menu?available=true - Filter by availability (optional)
+   * GET /menu?search=pasta - Search by name/description (optional)
+   * All query parameters are optional - can be used together or omitted entirely
    */
   @Public()
   @Get()
+  @ApiOperation({
+    summary: 'Get all menu items',
+    description: 'Public endpoint - Get all menu items. All query parameters are optional. Call without parameters to get the complete menu.'
+  })
+  @ApiQuery({ name: 'category', required: false, description: 'Filter by category (appetizer, main, dessert, beverage)', example: 'main' })
+  @ApiQuery({ name: 'available', required: false, description: 'Filter by availability (true/false)', example: 'true' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search in name and description', example: 'pasta' })
+  @ApiResponse({ status: 200, description: 'List of menu items (all items if no filters provided)' })
   @HttpCode(HttpStatus.OK)
   async findAll(
     @Query('category') category?: string,

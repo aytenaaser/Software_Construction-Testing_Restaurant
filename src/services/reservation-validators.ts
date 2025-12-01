@@ -24,6 +24,7 @@ export interface ReservationValidationStrategy {
 
 /**
  * Validates business hours constraint
+ * Accepts HH:MM format (24-hour)
  * NO CONSTRAINTS - accepts any time
  */
 export class BusinessHoursValidator implements ReservationValidationStrategy {
@@ -38,14 +39,22 @@ export class BusinessHoursValidator implements ReservationValidationStrategy {
       return Promise.resolve({ valid: errors.length === 0, errors });
     }
 
-    // No time constraints - any time is valid
+    // Validate HH:MM format (24-hour)
+    const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (!timePattern.test(timeValue)) {
+      errors.push('Reservation time must be in HH:MM format (e.g., 19:30)');
+      return Promise.resolve({ valid: errors.length === 0, errors });
+    }
+
+    // No time constraints - any valid time is accepted
     return Promise.resolve({ valid: true, errors: [] });
   }
 }
 
 /**
  * Validates reservation date constraint
- * NO CONSTRAINTS - accepts any date
+ * Accepts DD/MM/YYYY format
+ * Ensures date is in the future (not past dates)
  */
 export class FutureDateValidator implements ReservationValidationStrategy {
   validate(reservation: ValidatableReservation): Promise<{ valid: boolean; errors: string[] }> {
@@ -57,7 +66,38 @@ export class FutureDateValidator implements ReservationValidationStrategy {
       return Promise.resolve({ valid: errors.length === 0, errors });
     }
 
-    // No date constraints - any date is valid
+    // Validate DD/MM/YYYY format
+    const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!datePattern.test(raw)) {
+      errors.push('Reservation date must be in DD/MM/YYYY format (e.g., 15/12/2025)');
+      return Promise.resolve({ valid: errors.length === 0, errors });
+    }
+
+    // Parse DD/MM/YYYY to validate it's a real date
+    const [day, month, year] = raw.split('/').map(Number);
+    const reservationDate = new Date(year, month - 1, day);
+
+    // Check if the parsed date is valid
+    if (
+      reservationDate.getDate() !== day ||
+      reservationDate.getMonth() !== month - 1 ||
+      reservationDate.getFullYear() !== year
+    ) {
+      errors.push('Invalid date. Please provide a valid date in DD/MM/YYYY format');
+      return Promise.resolve({ valid: errors.length === 0, errors });
+    }
+
+    // Check if date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+    reservationDate.setHours(0, 0, 0, 0); // Reset time to start of day
+
+    if (reservationDate < today) {
+      errors.push('Reservation date cannot be in the past. Please choose a future date.');
+      return Promise.resolve({ valid: errors.length === 0, errors });
+    }
+
+    // Date is valid and in the future
     return Promise.resolve({ valid: true, errors: [] });
   }
 }

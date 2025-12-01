@@ -8,6 +8,7 @@ import { ReservationMapperService } from './mappers/reservation-mapper.service';
 import { ReservationValidationStrategy, CompositeReservationValidator, BusinessHoursValidator, FutureDateValidator, PartySizeValidator } from './reservation-validators';
 import { UsersService } from './user.service';
 import { UserRole } from '../models/user.schema';
+import { MailService } from '../auth/email/email-service';
 
 /**
  * Reservation Service
@@ -42,6 +43,7 @@ export class ReservationService {
     private tableModel: Model<TableDocument>,
     private readonly mapper: ReservationMapperService,
     private readonly usersService: UsersService,
+    private readonly mailService: MailService,
   ) {
     // Strategy pattern: Compose validators using dependency injection
     // This follows the Open/Closed Principle - easy to add more validators
@@ -53,8 +55,9 @@ export class ReservationService {
   }
 
     /**
-   * IMPERATIVE STYLE: Create a new reservation
-   * Step-by-step validation, conflict checking, and creation
+   * IMPERATIVE STYLE: Create a new reservation with automatic table assignment
+   * Automatically finds available table and confirms reservation (no pending status)
+   * Duration: 2 hours by default
    * Security: Uses authenticated user's email from database
    */
   async create(createReservationDto: CreateReservationDto, userId: string): Promise<ReservationResponseDto> {
@@ -67,7 +70,7 @@ export class ReservationService {
     // Step 2: Create reservation data with user's email
     const reservationData = {
       ...createReservationDto,
-      customerEmail: user.email, // Use authenticated user's email
+      customerEmail: user.email,
     };
 
     // Step 3: Validate input
@@ -79,33 +82,85 @@ export class ReservationService {
       });
     }
 
-    // Step 4: Check for duplicate reservation (same user, same date/time)
+    // Step 4: Calculate end time (2 hours after start time)
+    const durationHours = 2;
+    const endTime = this.calculateEndTime(createReservationDto.reservationTime, durationHours);
+
+    // Step 5: Check for duplicate reservation (same user, same date, overlapping time)
     const existingReservation = await this.reservationModel.findOne({
       userId: new Types.ObjectId(userId),
       reservationDate: createReservationDto.reservationDate,
-      reservationTime: createReservationDto.reservationTime,
-      status: { $in: ['confirmed', 'pending'] },
+      status: 'confirmed',
+      $or: [
+        // Check if new reservation overlaps with existing ones
+        {
+          reservationTime: { $lte: createReservationDto.reservationTime },
+          endTime: { $gt: createReservationDto.reservationTime }
+        },
+        {
+          reservationTime: { $lt: endTime },
+          endTime: { $gte: endTime }
+        },
+        {
+          reservationTime: { $gte: createReservationDto.reservationTime },
+          endTime: { $lte: endTime }
+        }
+      ]
     });
 
     if (existingReservation) {
-      throw new ConflictException('You already have a reservation for this date and time');
+      throw new ConflictException('You already have a reservation that overlaps with this time slot');
     }
 
-    // Step 5: Create reservation document with PENDING status
+    // Step 6: Find available table automatically
+    const availableTable = await this.findAvailableTable(
+      createReservationDto.reservationDate,
+      createReservationDto.reservationTime,
+      endTime,
+      createReservationDto.partySize
+    );
+
+    if (!availableTable) {
+      throw new ConflictException(
+        `No tables available for ${createReservationDto.partySize} people at ${createReservationDto.reservationTime} on ${createReservationDto.reservationDate}. Please choose a different time.`
+      );
+    }
+
+    // Step 7: Create reservation with CONFIRMED status and assigned table
     const reservation = new this.reservationModel({
       customerName: createReservationDto.customerName,
-      customerEmail: user.email, // Use user's email from database
+      customerEmail: user.email,
       reservationDate: createReservationDto.reservationDate,
       reservationTime: createReservationDto.reservationTime,
+      durationHours: durationHours,
+      endTime: endTime,
       partySize: createReservationDto.partySize,
       userId: new Types.ObjectId(userId),
-      status: 'pending', // Default to pending - awaiting admin approval
+      tableId: availableTable._id, // Auto-assigned table
+      status: 'confirmed', // Automatically confirmed if table found
     });
 
-    // Step 6: Save to database
+    // Step 8: Save to database
     const savedReservation = await reservation.save();
 
-    // Step 7: Map to response DTO and return
+    // Step 9: Send confirmation email (non-blocking)
+    try {
+      await this.mailService.sendReservationConfirmation({
+        email: user.email,
+        customerName: user.name,
+        reservationId: savedReservation._id.toString(),
+        reservationDate: savedReservation.reservationDate,
+        reservationTime: savedReservation.reservationTime,
+        partySize: savedReservation.partySize,
+        tableNumber: availableTable.tableNumber,
+        hasPreOrder: false,
+      });
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Continue even if email fails - reservation was created successfully
+    }
+
+    // Step 10: Map to response DTO and return
     return this.mapToResponseDto(savedReservation);
   }
 
@@ -116,6 +171,7 @@ export class ReservationService {
     async findAll(): Promise<ReservationResponseDto[]> {
         return this.reservationModel
             .find()
+            .populate('tableId') // Populate table information
             .sort({ reservationDate: -1, reservationTime: 1 })
             .lean()
             .exec()
@@ -142,6 +198,7 @@ export class ReservationService {
                     $lte: endDateStr,
                 },
             })
+            .populate('tableId') // Populate table information
             .sort({ reservationDate: 1, reservationTime: 1 })
             .lean()
             .exec()
@@ -161,8 +218,12 @@ export class ReservationService {
             throw new BadRequestException('Invalid reservation ID');
         }
 
-        // Query database
-        const reservation = await this.reservationModel.findById(id).lean().exec() as any;
+        // Query database and populate table information
+        const reservation = await this.reservationModel
+            .findById(id)
+            .populate('tableId')
+            .lean()
+            .exec() as any;
 
         // Check if exists
         if (!reservation) {
@@ -189,8 +250,8 @@ export class ReservationService {
             throw new NotFoundException(`Reservation with ID ${id} not found`);
         }
 
-        // Step 3: Check authorization (only owner or admin can update)
-        if (userRole !== UserRole.ADMIN && existingReservation.userId.toString() !== userId) {
+        // Step 3: Check authorization (owner, staff, or admin can update)
+        if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF && existingReservation.userId.toString() !== userId) {
             throw new ForbiddenException('You can only update your own reservations');
         }
 
@@ -231,6 +292,7 @@ export class ReservationService {
         // Step 7: Update in database
         const updatedReservation = await this.reservationModel
             .findByIdAndUpdate(id, { $set: updateData }, { new: true, runValidators: true })
+            .populate('tableId') // Populate table information
             .lean()
             .exec() as any;
 
@@ -238,7 +300,7 @@ export class ReservationService {
             throw new NotFoundException(`Reservation with ID ${id} not found`);
         }
 
-        // Step 6: Return mapped response
+        // Step 8: Return mapped response with table number
         return this.mapToResponseDto(updatedReservation);
     }
 
@@ -258,8 +320,8 @@ export class ReservationService {
             throw new NotFoundException(`Reservation with ID ${id} not found`);
         }
 
-        // Step 3: Check authorization (only owner or admin can cancel)
-        if (userRole !== UserRole.ADMIN && reservation.userId.toString() !== userId) {
+        // Step 3: Check authorization (owner, staff, or admin can cancel)
+        if (userRole !== UserRole.ADMIN && userRole !== UserRole.STAFF && reservation.userId.toString() !== userId) {
             throw new ForbiddenException('You can only cancel your own reservations');
         }
 
@@ -272,22 +334,27 @@ export class ReservationService {
         reservation.status = 'cancelled' as any;
         await reservation.save();
 
-        // Step 6: Return mapped response
-        return this.mapToResponseDto(reservation);
+        // Step 6: Populate table information and return
+        const populatedReservation = await this.reservationModel
+            .findById(id)
+            .populate('tableId')
+            .lean()
+            .exec();
+
+        return this.mapToResponseDto(populatedReservation);
     }
 
     /**
      * DECLARATIVE STYLE: Get availability
      * Returns actual available tables for a given date, time, and party size
+     * Date format: DD/MM/YYYY
+     * Time format: HH:MM
      */
-    async getAvailability(reservationDate: Date, reservationTime: string, partySize: number): Promise<any> {
-        // Convert date to string format for comparison
-        const dateStr = reservationDate.toISOString().split('T')[0];
-
+    async getAvailability(reservationDate: string, reservationTime: string, partySize: number): Promise<any> {
         // Query existing reservations for the time slot
         const bookedReservations = await this.reservationModel
             .find({
-                reservationDate: dateStr,
+                reservationDate: reservationDate,
                 reservationTime: reservationTime,
                 status: { $in: ['confirmed', 'pending'] },
             })
@@ -304,6 +371,7 @@ export class ReservationService {
             .find({
                 capacity: { $gte: partySize },
                 isAvailable: true,
+                status: 'available'  // Must also check status enum
             })
             .sort({ capacity: 1 })
             .lean()
@@ -316,7 +384,7 @@ export class ReservationService {
 
         // Return availability information
         return {
-            date: dateStr,
+            date: reservationDate,
             time: reservationTime,
             partySize,
             totalSuitableTables: suitableTables.length,
@@ -402,7 +470,27 @@ export class ReservationService {
         reservation.status = 'confirmed' as any;
         await reservation.save();
 
-        // Step 7: Return mapped response
+        // Step 7: Send confirmation email with table assignment (non-blocking)
+        try {
+            const user = await this.usersService.findById(reservation.userId.toString());
+            if (user) {
+                await this.mailService.sendReservationConfirmation({
+                    email: user.email,
+                    customerName: user.name,
+                    reservationId: reservation._id.toString(),
+                    reservationDate: reservation.reservationDate,
+                    reservationTime: reservation.reservationTime,
+                    partySize: reservation.partySize,
+                    tableNumber: table.tableNumber?.toString(),
+                    hasPreOrder: reservation.hasPreOrder || false,
+                });
+            }
+        } catch (emailError) {
+            console.error('Failed to send approval confirmation email:', emailError);
+            // Continue even if email fails - reservation was approved successfully
+        }
+
+        // Step 8: Return mapped response
         return this.mapToResponseDto(reservation);
     }
 
@@ -460,6 +548,7 @@ export class ReservationService {
             .find({
                 capacity: { $gte: partySize },
                 isAvailable: true,
+                status: 'available'  // Must also check status enum
             })
             .sort({ capacity: 1 })
             .lean()
@@ -486,6 +575,7 @@ export class ReservationService {
 
         return this.reservationModel
             .find({ userId: new Types.ObjectId(userId) })
+            .populate('tableId') // Populate table information to get tableNumber
             .sort({ reservationDate: -1, reservationTime: -1 })
             .lean()
             .exec()
@@ -499,19 +589,136 @@ export class ReservationService {
      */
 
     /**
+     * Calculate end time by adding duration hours to start time
+     * Format: HH:MM
+     */
+    private calculateEndTime(startTime: string, durationHours: number): string {
+        const [hours, minutes] = startTime.split(':').map(Number);
+        let endHours = hours + durationHours;
+        const endMinutes = minutes;
+
+        // Handle day overflow (e.g., 23:00 + 2 hours = 01:00 next day)
+        if (endHours >= 24) {
+            endHours = endHours % 24;
+        }
+
+        // Format with leading zeros
+        return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * Find an available table for the given date, time range, and party size
+     * Checks for time overlaps with existing reservations
+     */
+    private async findAvailableTable(
+        reservationDate: string,
+        startTime: string,
+        endTime: string,
+        partySize: number
+    ): Promise<any> {
+        // Step 1: Get all tables that can accommodate the party size
+        const suitableTables = await this.tableModel
+            .find({
+                capacity: { $gte: partySize },
+                isAvailable: true,
+                status: 'available'
+            })
+            .sort({ capacity: 1 }) // Prefer smaller tables first
+            .lean()
+            .exec();
+
+        if (suitableTables.length === 0) {
+            return null;
+        }
+
+        // Step 2: Find reservations for the same date with confirmed status
+        const dateReservations = await this.reservationModel
+            .find({
+                reservationDate: reservationDate,
+                status: 'confirmed'
+            })
+            .lean()
+            .exec();
+
+        // Step 3: Check each table for availability (no time overlap)
+        for (const table of suitableTables) {
+            const tableId = table._id.toString();
+
+            // Check if this table has any overlapping reservations
+            const hasConflict = dateReservations.some(res => {
+                if (res.tableId?.toString() !== tableId) {
+                    return false; // Different table, no conflict
+                }
+
+                // Check for time overlap
+                return this.doTimesOverlap(
+                    startTime,
+                    endTime,
+                    res.reservationTime,
+                    res.endTime
+                );
+            });
+
+            if (!hasConflict) {
+                return table; // Found available table
+            }
+        }
+
+        return null; // No available tables found
+    }
+
+    /**
+     * Check if two time ranges overlap
+     * Time format: HH:MM
+     */
+    private doTimesOverlap(
+        start1: string,
+        end1: string,
+        start2: string,
+        end2: string
+    ): boolean {
+        // Convert times to minutes for easier comparison
+        const toMinutes = (time: string): number => {
+            const [hours, minutes] = time.split(':').map(Number);
+            return hours * 60 + minutes;
+        };
+
+        const s1 = toMinutes(start1);
+        const e1 = toMinutes(end1);
+        const s2 = toMinutes(start2);
+        const e2 = toMinutes(end2);
+
+        // Check for overlap
+        return s1 < e2 && s2 < e1;
+    }
+
+    /**
      * Maps Reservation document to Response DTO
      * Follows Single Responsibility - only handles data transformation
      * Declarative approach using object literal
+     * Includes tableNumber from populated table data
      */
     private mapToResponseDto(reservation: any): ReservationResponseDto {
+        // Extract tableNumber from populated table data
+        let tableNumber: string | undefined;
+        if (reservation.tableId) {
+            if (typeof reservation.tableId === 'object' && reservation.tableId.tableNumber) {
+                // Table is populated
+                tableNumber = reservation.tableId.tableNumber;
+            }
+        }
+
         return {
             id: reservation._id?.toString() || reservation.id,
             customerName: reservation.customerName,
             customerEmail: reservation.customerEmail,
             reservationDate: reservation.reservationDate,
             reservationTime: reservation.reservationTime,
+            endTime: reservation.endTime,
+            durationHours: reservation.durationHours,
             partySize: reservation.partySize,
-            tableId: reservation.tableId?.toString() || reservation.tableId,
+            tableId: reservation.tableId?._id?.toString() || reservation.tableId?.toString() || reservation.tableId,
+            tableNumber: tableNumber, // Include table number in response
             userId: reservation.userId?.toString() || reservation.userId,
             status: reservation.status,
             createdAt: reservation.createdAt || new Date(),

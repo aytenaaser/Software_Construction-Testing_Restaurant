@@ -47,11 +47,17 @@ export class Reservation {
   @Prop({ required: true })
   reservationTime: string;
 
+  @Prop({ default: 2 })
+  durationHours: number; // Default 2 hours
+
+  @Prop({ required: true })
+  endTime: string; // Calculated end time (HH:MM format)
+
   @Prop({ required: true, min: 1, max: 20 })
   partySize: number;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Table', required: false })
-  tableId?: MongooseSchema.Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Table', required: true })
+  tableId: MongooseSchema.Types.ObjectId; // Now required - auto-assigned
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId: MongooseSchema.Types.ObjectId;
@@ -69,6 +75,13 @@ export class Reservation {
     default: ReservationStatus.PENDING,
   })
   status: ReservationStatus;
+
+  // Reminder tracking
+  @Prop({ default: false })
+  reminderSent: boolean;
+
+  @Prop({ type: Date })
+  reminderSentAt?: Date;
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;

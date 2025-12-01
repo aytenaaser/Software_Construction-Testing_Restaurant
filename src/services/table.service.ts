@@ -55,26 +55,92 @@ export class TableService {
   }
 
   /**
-   * DECLARATIVE STYLE: Find available tables
-   * Functional filtering
+   * Find available tables for a specific date and time range
+   * @param date - Date in format DD/MM/YYYY
+   * @param fromHour - Start hour (0-23)
+   * @param toHour - End hour (0-23)
+   * Checks both isAvailable flag AND status field
+   * Also checks for existing reservations in the time range
    */
-  async findAvailable(): Promise<Table[]> {
-    return this.tableModel
-      .find({ isAvailable: true })
+  async findAvailable(date: string, fromHour: number, toHour: number): Promise<any> {
+    // Validate hour range
+    if (fromHour < 0 || fromHour > 23 || toHour < 0 || toHour > 23) {
+      throw new BadRequestException('Hours must be between 0 and 23');
+    }
+    if (fromHour >= toHour) {
+      throw new BadRequestException('fromHour must be less than toHour');
+    }
+
+    // Convert DD/MM/YYYY to YYYY-MM-DD for database query
+    const [day, month, year] = date.split('/');
+    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+    // Get all tables that are generally available
+    const allTables = await this.tableModel
+      .find({
+        isAvailable: true,
+        status: 'available'
+      })
       .sort({ capacity: 1 })
       .lean()
       .exec();
+
+    // Import reservation model to check bookings
+    const ReservationModel = this.tableModel.db.model('Reservation');
+
+    // Find all reservations for this date in the time range
+    const reservations = await ReservationModel
+      .find({
+        reservationDate: isoDate,
+        status: { $in: ['confirmed', 'pending'] }
+      })
+      .lean()
+      .exec();
+
+    // Filter reservations that fall within the time range
+    const conflictingReservations = reservations.filter((reservation: any) => {
+      const reservationHour = parseInt(reservation.reservationTime.split(':')[0]);
+      return reservationHour >= fromHour && reservationHour < toHour;
+    });
+
+    // Get IDs of booked tables
+    const bookedTableIds = conflictingReservations
+      .filter((r: any) => r.tableId)
+      .map((r: any) => r.tableId.toString());
+
+    // Filter out booked tables
+    const availableTables = allTables.filter(
+      table => !bookedTableIds.includes(table._id.toString())
+    );
+
+    return {
+      date: date,
+      timeRange: `${fromHour}:00 - ${toHour}:00`,
+      totalTables: allTables.length,
+      bookedTables: bookedTableIds.length,
+      availableTables: availableTables.map(t => ({
+        id: t._id.toString(),
+        tableNumber: t.tableNumber,
+        capacity: t.capacity,
+        floor: t.floor,
+        position: t.position,
+        shape: t.shape
+      })),
+      availableCount: availableTables.length
+    };
   }
 
   /**
    * DECLARATIVE STYLE: Find tables by capacity
    * Functional filtering for tables that can accommodate party size
+   * Checks both isAvailable flag AND status field
    */
   async findByCapacity(partySize: number): Promise<Table[]> {
     return this.tableModel
       .find({
         capacity: { $gte: partySize },
         isAvailable: true,
+        status: 'available'  // Must also check status enum
       })
       .sort({ capacity: 1 })
       .lean()
