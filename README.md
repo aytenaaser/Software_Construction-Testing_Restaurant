@@ -10,6 +10,23 @@ A complete restaurant reservation system with a NestJS backend and Next.js front
 - **MongoDB** (local or cloud instance)
 - **Email service** (for OTP verification)
 
+### Environment Setup
+
+**Before running the application, you need to create environment files:**
+
+📋 **See [ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md) for detailed instructions**
+
+**Quick setup:**
+```bash
+# 1. Create backend .env file (in root directory)
+cp .env.example .env
+# Then edit .env with your values
+
+# 2. Create frontend .env.local file (in frontend directory)
+cd frontend
+cp .env.local.example .env.local
+```
+
 ### Running the Complete Application
 
 #### 1. Backend Setup (Port 8000)
@@ -18,14 +35,7 @@ A complete restaurant reservation system with a NestJS backend and Next.js front
 # Install backend dependencies
 npm install
 
-# Configure environment variables
-# Create a .env file in the root directory with:
-# MONGODB_URI=mongodb://localhost:27017/restaurant
-# JWT_SECRET=your-secret-key
-# EMAIL_HOST=smtp.gmail.com
-# EMAIL_PORT=587
-# EMAIL_USER=your-email@gmail.com
-# EMAIL_PASS=your-email-password
+# Make sure you've created the .env file (see Environment Setup above)
 
 # Start the backend server
 npm run start:dev
@@ -42,8 +52,7 @@ cd frontend
 # Install frontend dependencies
 npm install
 
-# Create .env.local file (optional, defaults to localhost:8000)
-echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+# Make sure you've created the .env.local file (see Environment Setup above)
 
 # Start the frontend development server
 npm run dev
