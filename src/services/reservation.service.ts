@@ -354,6 +354,7 @@ export class ReservationService {
             reservationDate: reservationDate,
             status: { $in: ['confirmed', 'pending'] },
         })
+        .populate('tableId') // Populate tableId to ensure it's a proper object
         .lean()
         .exec();
 
@@ -389,7 +390,15 @@ export class ReservationService {
           return false;
         }
 
-        const reservationTableIdStr = reservation.tableId.toString();
+        // Handle both populated and non-populated tableId
+        let reservationTableIdStr: string;
+        if (typeof reservation.tableId === 'object' && (reservation.tableId as any)._id) {
+          // TableId is populated (has table details)
+          reservationTableIdStr = (reservation.tableId as any)._id.toString();
+        } else {
+          // TableId is just an ObjectId
+          reservationTableIdStr = reservation.tableId.toString();
+        }
 
         if (reservationTableIdStr !== tableIdStr) {
           return false; // Different table, no conflict
