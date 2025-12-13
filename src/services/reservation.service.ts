@@ -389,6 +389,7 @@ export class ReservationService {
           return false;
         }
 
+        // Convert tableId to string for comparison
         const reservationTableIdStr = reservation.tableId.toString();
 
         if (reservationTableIdStr !== tableIdStr) {

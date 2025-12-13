@@ -137,23 +137,25 @@ Content-Type: application/json
 
 {
   "customerName": "John Doe",
-  "reservationDate": "2024-12-25",
+  "reservationDate": "25/12/2024",
   "reservationTime": "19:00",
   "partySize": 4
 }
 ### NOTE: customerEmail removed - now automatically uses logged-in user's email
 ### Status is 'pending' - awaits admin approval
+### Date format: DD/MM/YYYY (e.g., 25/12/2024)
 
 ### Get My Reservations (Customer - shows only their reservations)
 GET http://localhost:8000/reservations/my-reservations
 # NEW ENDPOINT: Returns all reservations for the logged-in customer
 
 ### Check Availability (Shows actual available tables)
-GET http://localhost:8000/reservations/availability/check?date=2024-12-25&time=19:00&partySize=4
+GET http://localhost:8000/reservations/availability/check?date=25/12/2024&startTime=19:00&endTime=21:00&partySize=4
 # FIXED: Now returns actual available tables with IDs
+# Date format: DD/MM/YYYY, use startTime and endTime to specify time range
 
 ### Get Available Tables (Returns list of tables)
-GET http://localhost:8000/reservations/available-tables?date=2024-12-25&time=19:00&partySize=4
+GET http://localhost:8000/reservations/available-tables?date=25/12/2024&time=19:00&partySize=4
 # NEW ENDPOINT: Shows which specific tables are available
 
 ### Update My Reservation (Customer can update their own, Admin can update any)
@@ -161,11 +163,12 @@ PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd
 Content-Type: application/json
 
 {
-  "reservationDate": "2024-12-26",
+  "reservationDate": "26/12/2024",
   "reservationTime": "20:00",
   "partySize": 6
 }
 ### FIXED: Checks availability, verifies ownership
+### Date format: DD/MM/YYYY
 
 ### Cancel My Reservation (Customer can cancel their own, Admin can cancel any)
 PUT http://localhost:8000/reservations/692aa006f5bb0e6ca77c1dcd/cancel
