@@ -11,6 +11,16 @@ import { TableModule } from "./modules/table-module";
 import { MenuModule } from "./modules/menu-module";
 import { MenuOrderModule } from "./modules/menu-order-module";
 import { FeedbackModule } from "./modules/feedback-module";
+import { AdminController } from './controllers/admin.controller';
+
+import { FeedbackController } from './controllers/feedback-controller';
+import { MenuController } from './controllers/menu-controller';
+import { MenuOrderController } from './controllers/menu-order-controller';
+import { PaymentController } from './controllers/payment-controller';
+import { ReservationController } from './controllers/reservation-controller';
+import { TableController } from './controllers/table-controller';
+import { UsersController } from './controllers/user-controller';
+import { AuthController } from './auth/auth-controller';
 
 @Module({
     imports: [
@@ -32,6 +42,16 @@ import { FeedbackModule } from "./modules/feedback-module";
         MenuOrderModule,      // ✅ NEW: Pre-order system
         FeedbackModule,       // ✅ NEW: Customer feedback
     ],
-
+    controllers: [
+        AdminController,
+        AuthController,
+        UsersController,
+        ReservationController,
+        TableController,
+        PaymentController,
+        MenuController,
+        MenuOrderController,
+        FeedbackController,
+    ],
 })
 export class AppModule {}

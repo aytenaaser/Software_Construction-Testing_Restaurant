@@ -4,9 +4,9 @@ import { redirect } from 'next/navigation';
 import { cookies } from "next/headers";
 export default async function apiserver() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value || "";
+  const token = cookieStore.get("access_token")?.value || "";
   const axiosInstance = axios.create({
-    baseURL: "http://localhost:3000", // Use environment variable for base URL
+    baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000", // Backend API URL
     headers: token
       ? { Authorization: `Bearer ${token}` } // send JWT to Nest
       : {},

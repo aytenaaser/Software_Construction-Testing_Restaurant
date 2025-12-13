@@ -133,32 +133,22 @@ export class ReservationController {
   }
 
   /**
-   * Get a single reservation by ID
-   * GET /reservations/:id
-   * IMPERATIVE: Single resource fetch with error handling
-   */
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  async findById(@Param('id') id: string): Promise<ReservationResponseDto> {
-    return this.reservationService.findById(id);
-  }
-
-  /**
    * Check availability for a time slot
-   * GET /reservations/availability?date=2024-12-15&time=19:00&partySize=4
+   * GET /reservations/availability/check?date=15/12/2024&startTime=19:00&endTime=21:00&partySize=4
    * DECLARATIVE: Availability query
    */
   @Get('availability/check')
   @HttpCode(HttpStatus.OK)
-  async checkAvailability(
+  async getTableAvailability(
     @Query('date') dateStr: string,
-    @Query('time') time: string,
+    @Query('startTime') startTime: string,
+    @Query('endTime') endTime: string,
     @Query('partySize') partySizeStr: string,
   ): Promise<any> {
     // Validate parameters
-    if (!dateStr || !time || !partySizeStr) {
+    if (!dateStr || !startTime || !endTime || !partySizeStr) {
       throw new BadRequestException(
-        'date, time, and partySize query parameters are required',
+        'date, startTime, endTime, and partySize query parameters are required',
       );
     }
 
@@ -177,7 +167,18 @@ export class ReservationController {
       );
     }
 
-    return this.reservationService.getAvailability(dateStr, time, partySize);
+    return this.reservationService.getTableAvailability(dateStr, startTime, endTime, partySize);
+  }
+
+  /**
+   * Get a single reservation by ID
+   * GET /reservations/:id
+   * IMPERATIVE: Single resource fetch with error handling
+   */
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  async findById(@Param('id') id: string): Promise<ReservationResponseDto> {
+    return this.reservationService.findById(id);
   }
 
   /**

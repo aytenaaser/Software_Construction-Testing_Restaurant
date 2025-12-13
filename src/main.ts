@@ -14,10 +14,15 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
+    // ✅ ADD GLOBAL API PREFIX
+    app.setGlobalPrefix('api');
+
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
     app.enableCors({
-        origin: ['http://localhost:3999', 'http://localhost:3000', 'http://localhost:5000'],
+        origin: process.env.NODE_ENV === 'production'
+            ? 'https://yourdomain.com'
+            : true, // Allow all origins in development
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
@@ -65,14 +70,14 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config, {});
 
-    SwaggerModule.setup('api', app, document);
+    SwaggerModule.setup('api/docs', app, document);
 
-    const port = Number(process.env.PORT) || 8000;
+    const port = Number(process.env.PORT);
 
     await app.listen(port);
 
     console.log(`Application running on http://localhost:${port}`);
 
-    console.log(`Swagger running on http://localhost:${port}/api`);
+    console.log(`Swagger running on http://localhost:${port}/api/docs`);
 }
 bootstrap()

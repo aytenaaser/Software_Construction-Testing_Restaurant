@@ -93,8 +93,8 @@ export class AuthService {
         try {
             await this.mail.sendVerificationEmail(newUser.email, otpCode);
         } catch (e: any) {
-            // Email sending failed - log to console
-            console.error('Failed to send verification email:', e?.message ?? String(e));
+            // Email sending failed - log to console with full error object
+            console.error('Failed to send verification email. Full error:', e);
         }
 
         return {

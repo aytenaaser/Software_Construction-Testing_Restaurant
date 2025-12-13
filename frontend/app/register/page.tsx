@@ -30,6 +30,10 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      console.log("📤 Sending registration request to /auth/register");
+      console.log("📋 Form data:", formData);
+      console.log("🔗 API base URL:", process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api");
+
       const response = await axiosInstance.post("/auth/register", formData);
       console.log("✅ Registration successful:", response.data);
 
@@ -37,7 +41,16 @@ export default function RegisterPage() {
       router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
     } catch (err: any) {
       console.error("❌ Registration error:", err);
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      console.error("📊 Error details:", {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url,
+        method: err.config?.method,
+        baseURL: err.config?.baseURL,
+      });
+      setError(err.response?.data?.message || err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -102,6 +115,14 @@ export default function RegisterPage() {
               required
               minLength={6}
             />
+            <p className="text-xs text-gray-500 mt-2">
+              Password must contain:
+              <br />• At least 6 characters
+              <br />• One uppercase letter (A-Z)
+              <br />• One lowercase letter (a-z)
+              <br />• One number (0-9)
+              <br />Example: Password123
+            </p>
           </div>
 
           <div>

@@ -109,10 +109,10 @@ export class ReservationService {
     });
 
     if (existingReservation) {
-      throw new ConflictException('You already have a reservation that overlaps with this time slot');
+      throw new ConflictException('You already have a reservation at this time.');
     }
 
-    // Step 6: Find available table automatically
+    // Step 6: Find an available table
     const availableTable = await this.findAvailableTable(
       createReservationDto.reservationDate,
       createReservationDto.reservationTime,
@@ -121,13 +121,11 @@ export class ReservationService {
     );
 
     if (!availableTable) {
-      throw new ConflictException(
-        `No tables available for ${createReservationDto.partySize} people at ${createReservationDto.reservationTime} on ${createReservationDto.reservationDate}. Please choose a different time.`
-      );
+      throw new ConflictException('No available tables for the requested time and party size.');
     }
 
-    // Step 7: Create reservation with CONFIRMED status and assigned table
-    const reservation = new this.reservationModel({
+    // Step 7: Create and save the new reservation
+    const newReservation = new this.reservationModel({
       customerName: createReservationDto.customerName,
       customerEmail: user.email,
       reservationDate: createReservationDto.reservationDate,
@@ -137,34 +135,27 @@ export class ReservationService {
       partySize: createReservationDto.partySize,
       userId: new Types.ObjectId(userId),
       tableId: availableTable._id, // Auto-assigned table
-      status: 'confirmed', // Automatically confirmed if table found
+      status: 'confirmed', // Automatically confirmed
     });
 
-    // Step 8: Save to database
-    const savedReservation = await reservation.save();
+    const savedReservation = await newReservation.save();
 
-    // Step 9: Send confirmation email (non-blocking)
-    try {
-      await this.mailService.sendReservationConfirmation({
-        email: user.email,
-        customerName: user.name,
-        reservationId: savedReservation._id.toString(),
-        reservationDate: savedReservation.reservationDate,
-        reservationTime: savedReservation.reservationTime,
-        partySize: savedReservation.partySize,
-        tableNumber: availableTable.tableNumber,
-        hasPreOrder: false,
-      });
-    } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError);
-      // Continue even if email fails - reservation was created successfully
-    }
+    // Step 8: Send confirmation email
+    await this.mailService.sendReservationConfirmation({
+      email: user.email,
+      customerName: user.name,
+      reservationId: savedReservation._id.toString(),
+      reservationDate: savedReservation.reservationDate,
+      reservationTime: savedReservation.reservationTime,
+      partySize: savedReservation.partySize,
+      tableNumber: availableTable.tableNumber,
+      hasPreOrder: savedReservation.hasPreOrder,
+    });
 
-    // Step 10: Map to response DTO and return
-    return this.mapToResponseDto(savedReservation);
+    return this.mapper.toResponseDto(savedReservation);
   }
 
-    /**
+  /**
      * DECLARATIVE STYLE: Find all reservations
      * Uses functional approach with filtering and mapping
      */
@@ -350,52 +341,104 @@ export class ReservationService {
      * Date format: DD/MM/YYYY
      * Time format: HH:MM
      */
-    async getAvailability(reservationDate: string, reservationTime: string, partySize: number): Promise<any> {
-        // Query existing reservations for the time slot
-        const bookedReservations = await this.reservationModel
-            .find({
-                reservationDate: reservationDate,
-                reservationTime: reservationTime,
-                status: { $in: ['confirmed', 'pending'] },
-            })
-            .lean()
-            .exec();
+    async getTableAvailability(reservationDate: string, startTime: string, endTime: string, partySize: number): Promise<any> {
+    const requestedStartTime = startTime;
+    const requestedEndTime = endTime;
 
-        // Extract booked table IDs (filter out null/undefined)
-        const bookedTableIds = bookedReservations
-            .filter(r => r.tableId)
-            .map(r => r.tableId!.toString());
+    console.log('=== getTableAvailability called ===');
+    console.log('Parameters:', { reservationDate, startTime, endTime, partySize });
 
-        // Get all tables that can accommodate the party size
-        const suitableTables = await this.tableModel
-            .find({
-                capacity: { $gte: partySize },
-                isAvailable: true,
-                status: 'available'  // Must also check status enum
-            })
-            .sort({ capacity: 1 })
-            .lean()
-            .exec();
+    // Step 1: Get all reservations for the specified date to check for conflicts.
+    const reservationsOnDate = await this.reservationModel
+        .find({
+            reservationDate: reservationDate,
+            status: { $in: ['confirmed', 'pending'] },
+        })
+        .lean()
+        .exec();
 
-        // Filter out booked tables
-        const availableTables = suitableTables.filter(
-            table => !bookedTableIds.includes(table._id.toString())
+    console.log('Reservations found on date:', reservationsOnDate.length);
+    reservationsOnDate.forEach((r, i) => {
+        console.log(`Reservation ${i + 1}:`, {
+            tableId: r.tableId?.toString(),
+            time: r.reservationTime,
+            endTime: r.endTime,
+            status: r.status
+        });
+    });
+
+    // Step 2: Get all tables that can accommodate the party size.
+    const suitableTables = await this.tableModel
+        .find({ capacity: { $gte: partySize }, isAvailable: true })
+        .sort({ tableNumber: 1 })
+        .lean()
+        .exec();
+
+    console.log('Suitable tables found:', suitableTables.length);
+    suitableTables.forEach(t => {
+        console.log(`Table: ${t.tableNumber}, ID: ${t._id.toString()}, Capacity: ${t.capacity}`);
+    });
+
+    // Step 3: Determine the actual availability of each suitable table.
+    const tablesWithAvailability = suitableTables.map(table => {
+      const tableIdStr = table._id.toString();
+
+      const isBooked = reservationsOnDate.some(reservation => {
+        if (!reservation.tableId) {
+          console.log(`Reservation has no tableId, skipping`);
+          return false;
+        }
+
+        const reservationTableIdStr = reservation.tableId.toString();
+
+        if (reservationTableIdStr !== tableIdStr) {
+          return false; // Different table, no conflict
+        }
+
+        const reservationEndTime = reservation.endTime || this.calculateEndTime(reservation.reservationTime, reservation.durationHours || 2);
+
+        console.log(`Checking table ${table.tableNumber} (${tableIdStr})`);
+        console.log(`  Reservation tableId: ${reservationTableIdStr}`);
+        console.log(`  Requested: ${requestedStartTime} - ${requestedEndTime}`);
+        console.log(`  Existing: ${reservation.reservationTime} - ${reservationEndTime}`);
+
+        const overlaps = this.doTimesOverlap(
+            requestedStartTime,
+            requestedEndTime,
+            reservation.reservationTime,
+            reservationEndTime
         );
 
-        // Return availability information
-        return {
-            date: reservationDate,
-            time: reservationTime,
-            partySize,
-            totalSuitableTables: suitableTables.length,
-            bookedTables: bookedTableIds.length,
-            availableTables: availableTables.map(t => ({
-                id: t._id.toString(),
-                capacity: t.capacity,
-            })),
-            hasAvailability: availableTables.length > 0,
-        };
-    }
+        console.log(`  Overlaps: ${overlaps}`);
+
+        return overlaps;
+      });
+
+      console.log(`Table ${table.tableNumber}: isBooked = ${isBooked}`);
+
+      return {
+        ...table,
+        isBooked,
+        canAccommodate: true,
+        isAvailable: !isBooked,
+      };
+    });
+
+    const availableTables = tablesWithAvailability.filter(t => t.isAvailable);
+    const bookedTables = tablesWithAvailability.filter(t => !t.isAvailable);
+
+    console.log('=== Results ===');
+    console.log('Available tables:', availableTables.map(t => t.tableNumber));
+    console.log('Booked tables:', bookedTables.map(t => t.tableNumber));
+
+    return {
+        date: reservationDate,
+        startTime,
+        endTime,
+        partySize,
+        tables: availableTables,
+    };
+  }
 
     /**
      * IMPERATIVE STYLE: Delete a reservation (Admin only)
@@ -616,55 +659,37 @@ export class ReservationService {
         endTime: string,
         partySize: number
     ): Promise<any> {
-        // Step 1: Get all tables that can accommodate the party size
-        const suitableTables = await this.tableModel
-            .find({
-                capacity: { $gte: partySize },
-                isAvailable: true,
-                status: 'available'
-            })
-            .sort({ capacity: 1 }) // Prefer smaller tables first
-            .lean()
-            .exec();
-
-        if (suitableTables.length === 0) {
-            return null;
-        }
-
-        // Step 2: Find reservations for the same date with confirmed status
-        const dateReservations = await this.reservationModel
-            .find({
-                reservationDate: reservationDate,
-                status: 'confirmed'
-            })
-            .lean()
-            .exec();
-
-        // Step 3: Check each table for availability (no time overlap)
-        for (const table of suitableTables) {
-            const tableId = table._id.toString();
-
-            // Check if this table has any overlapping reservations
-            const hasConflict = dateReservations.some(res => {
-                if (res.tableId?.toString() !== tableId) {
-                    return false; // Different table, no conflict
+        // Step 1: Find all table IDs that have conflicting reservations on the given date and time
+        const conflictingReservations = await this.reservationModel.find({
+            reservationDate: reservationDate,
+            status: { $in: ['confirmed', 'pending'] },
+            $or: [
+                { // Reservation starts during the requested slot
+                    reservationTime: { $gte: startTime, $lt: endTime }
+                },
+                { // Reservation ends during the requested slot
+                    endTime: { $gt: startTime, $lte: endTime }
+                },
+                { // Reservation envelops the requested slot
+                    reservationTime: { $lte: startTime },
+                    endTime: { $gte: endTime }
                 }
+            ]
+        }).distinct('tableId');
 
-                // Check for time overlap
-                return this.doTimesOverlap(
-                    startTime,
-                    endTime,
-                    res.reservationTime,
-                    res.endTime
-                );
-            });
+        const conflictingTableIds = conflictingReservations.map(id => id.toString());
 
-            if (!hasConflict) {
-                return table; // Found available table
-            }
-        }
+        // Step 2: Find a table that meets the criteria and is NOT in the list of conflicting tables
+        const availableTable = await this.tableModel.findOne({
+            capacity: { $gte: partySize },
+            isAvailable: true,
+            _id: { $nin: conflictingTableIds }
+        })
+        .sort({ capacity: 1 }) // Prefer smaller tables first
+        .lean()
+        .exec();
 
-        return null; // No available tables found
+        return availableTable; // This will be the first available table or null
     }
 
     /**
@@ -679,6 +704,9 @@ export class ReservationService {
     ): boolean {
         // Convert times to minutes for easier comparison
         const toMinutes = (time: string): number => {
+            if (!time || !time.includes(':')) {
+                return -1;
+            }
             const [hours, minutes] = time.split(':').map(Number);
             return hours * 60 + minutes;
         };
@@ -688,8 +716,20 @@ export class ReservationService {
         const s2 = toMinutes(start2);
         const e2 = toMinutes(end2);
 
-        // Check for overlap
-        return s1 < e2 && s2 < e1;
+        console.log(`doTimesOverlap: s1=${s1}, e1=${e1}, s2=${s2}, e2=${e2}`);
+
+        // If any time is invalid, assume overlap for safety
+        if (s1 === -1 || e1 === -1 || s2 === -1 || e2 === -1) {
+            console.log('Invalid time detected, assuming overlap');
+            return true;
+        }
+
+        // Two time ranges overlap if one starts before the other ends
+        // Range 1: [s1, e1), Range 2: [s2, e2)
+        // Overlap exists if: s1 < e2 AND s2 < e1
+        const overlaps = s1 < e2 && s2 < e1;
+        console.log(`Overlap result: ${overlaps}`);
+        return overlaps;
     }
 
     /**
@@ -726,4 +766,3 @@ export class ReservationService {
         };
     }
 }
-

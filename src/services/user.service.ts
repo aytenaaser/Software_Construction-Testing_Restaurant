@@ -41,12 +41,14 @@ export class UsersService {
    * Step-by-step operation with explicit error handling
    */
   async create(createUserDto: CreateUserDto): Promise<User> {
+    console.log('Attempting to create user:', createUserDto.email);
     // Check if user already exists
     const existingUser = await this.userModel.findOne({
       email: createUserDto.email,
     });
 
     if (existingUser) {
+      console.error('User with this email already exists:', createUserDto.email);
       throw new ConflictException('User with this email already exists');
     }
 
@@ -59,7 +61,14 @@ export class UsersService {
       password: hashedPassword,
     });
 
-    return user.save();
+    try {
+      const savedUser = await user.save();
+      console.log('User saved successfully:', savedUser.email);
+      return savedUser;
+    } catch (error) {
+      console.error('Error saving user to database:', error);
+      throw error;
+    }
   }
 
   /**
@@ -89,6 +98,19 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     return updatedUser;
+  }
+
+  /**
+   * IMPERATIVE STYLE: Delete a user by email
+   * Useful for admin operations to clear test accounts.
+   */
+  async deleteByEmail(email: string): Promise<void> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const result = await this.userModel.deleteOne({ email: normalizedEmail }).exec();
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
   }
 
   /**

@@ -1,0 +1,68 @@
+📧 EMAIL FIX - QUICK STEPS
+
+═══════════════════════════════════════════════════════════════════════════════
+
+ERROR YOU'RE GETTING:
+  Mail transporter verify error: Error: Invalid login: 535 5.7.0 Invalid credentials
+
+REASON:
+  Gmail requires app-specific password, not regular password
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ SOLUTION IN 5 MINUTES
+
+Step 1: Enable 2-Factor Authentication (if not done)
+  ├─ Go to: https://myaccount.google.com/security
+  ├─ Click: "2-Step Verification"
+  └─ Follow the setup with your phone
+
+Step 2: Get App-Specific Password
+  ├─ Go to: https://myaccount.google.com/apppasswords
+  ├─ App: Select "Mail"
+  ├─ Device: Select "Windows Computer"
+  ├─ Click: "Generate"
+  └─ Copy: The 16-character password Google shows
+
+Step 3: Update .env File
+  ├─ File: .env (in root of your project)
+  ├─ Find: EMAIL_APP_PASSWORD=YOUR_APP_SPECIFIC_PASSWORD_HERE
+  ├─ Replace: YOUR_APP_SPECIFIC_PASSWORD_HERE with the 16-character password
+  └─ Important: Remove any spaces from password
+
+Step 4: Restart Backend
+  ├─ Stop: Press Ctrl+C in backend terminal
+  ├─ Start: npm run start:dev
+  └─ Check: Backend should start without email errors
+
+═══════════════════════════════════════════════════════════════════════════════
+
+EXAMPLE:
+
+Before (WRONG):
+  EMAIL_APP_PASSWORD=YOUR_APP_SPECIFIC_PASSWORD_HERE
+
+After (CORRECT):
+  EMAIL_APP_PASSWORD=abcdefghijklmnop
+
+(Replace "abcdefghijklmnop" with your actual 16-character password)
+
+═════════════════════════════════════════════════════════════════════════════
+
+WHAT HAPPENS AFTER:
+
+✅ Backend will start without email errors
+✅ When users register, they'll receive verification emails
+✅ Password reset emails will work
+✅ All email features enabled
+
+═════════════════════════════════════════════════════════════════════════════
+
+NEED HELP?
+
+For detailed guide: See GMAIL_SETUP_GUIDE.md
+For troubleshooting: Check backend console logs
+For production: Update SMTP settings in .env
+
+═════════════════════════════════════════════════════════════════════════════
+

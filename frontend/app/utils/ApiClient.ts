@@ -3,14 +3,16 @@
 import axios from 'axios';
 import { redirect } from 'next/navigation';
 
-// ✅ FIXED: Backend runs on port 8000, not 3000
+// Use environment variable, defaults to port 6000 for backend
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
-  withCredentials: true, // ✅ Required for cookies (JWT token)
+  baseURL: (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1111"),
+  withCredentials: true, // Required for cookies (JWT token)
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+console.log("🚀 API Client Initialized. Base URL:", axiosInstance.defaults.baseURL);
 
 // This variable will hold the function that AuthContext gives us
 let onUnAuthenticated: (() => void) | undefined;

@@ -51,26 +51,34 @@ export class MailService {
      * Step-by-step email composition and sending
      */
     async sendVerificationEmail(email: string, otp: string) {
+        console.log(`[MailService] Attempting to send verification email to: ${email}`);
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
-            subject: 'Account Verification - Education Platform',
+            subject: 'Account Verification - Restaurant System',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <h2 style="color: #8B5CF6;">Account Verification</h2>
                   <p>Hello,</p>
-                  <p>Thank you for registering with Educational Platform. Please verify your account to continue.</p>
+                  <p>Thank you for registering with our Restaurant Reservation system. Please use the code below to verify your account.</p>
                   <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
                     <h1 style="font-size: 32px; color: #8B5CF6; margin: 0; letter-spacing: 5px;">${otp}</h1>
                   </div>
                   <p>This code will expire in 10 minutes.</p>
                   <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-                  <p style="font-size: 12px; color: #6b7280;">Automated email from HR System. Please do not reply.</p>
+                  <p style="font-size: 12px; color: #6b7280;">This is an automated email. Please do not reply.</p>
                 </div>
             `,
         };
 
-        return this.transporter.sendMail(mailOptions);
+        try {
+            const info = await this.transporter.sendMail(mailOptions);
+            console.log(`[MailService] Verification email sent successfully to ${email}. Message ID: ${info.messageId}`);
+            return info;
+        } catch (error) {
+            console.error(`[MailService] Failed to send verification email to ${email}. Error:`, error);
+            throw error; // Re-throw the error to be caught by the calling service
+        }
     }
 
     /**

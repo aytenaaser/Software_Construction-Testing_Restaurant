@@ -21,6 +21,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
+  isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -90,6 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login: backend sets cookie, then fetch user
   const login = async (email: string, password: string) => {
+    const url = axiosInstance.getUri() + "/auth/login";
+    console.log("Attempting to log in to:", url);
     await axiosInstance.post("/auth/login", { email, password });
     await fetchMe(); // Fetch user data after successful login
   };
@@ -107,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     user,
+    isAuthenticated: !!user,
     loading,
     login,
     logout,
